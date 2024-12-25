@@ -1,4 +1,4 @@
-#include <cjson/cJSON.h>
+#include "cJSON.h"
 #include <libxml2.h>
 #include <scanner.h>
 #include <stdbool.h>

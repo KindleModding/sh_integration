@@ -1,6 +1,6 @@
 #include "scanner.h"
 #include "simple_sh_parser.h"
-#include <cjson/cJSON.h>
+#include "cJSON.h"
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>

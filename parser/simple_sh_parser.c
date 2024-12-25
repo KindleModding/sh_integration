@@ -1,4 +1,4 @@
-#include <cjson/cJSON.h>
+#include "cJSON.h"
 #include "utils.h"
 #include <dlfcn.h>
 #include <stdio.h>
