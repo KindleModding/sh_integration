@@ -1,4 +1,4 @@
-project('sh_integration', 'c', version : '1.0.0', default_options: ['default_library=static'])
+project('sh_integration', 'c', 'cpp', version : '1.0.0', default_options: ['default_library=static', 'c++_std=17'])
 
 cmake = import('cmake')
 

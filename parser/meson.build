@@ -1,7 +1,5 @@
 sources = files(
-    './main.c',
-    './utils.c',
-    './simple_sh_parser.c'
+    './main.cpp'
 )
 #include_dir = include_directories(
 #    './src/includes'
