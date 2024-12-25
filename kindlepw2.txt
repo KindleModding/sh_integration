@@ -1,0 +1,11 @@
+[binaries]
+c = '/home/hackerdude/x-tools/arm-kindlepw2-linux-gnueabi/bin/arm-kindlepw2-linux-gnueabi-gcc'
+cpp = '/home/hackerdude/x-tools/arm-kindlepw2-linux-gnueabi/bin/arm-kindlepw2-linux-gnueabi-g++'
+ar = '/home/hackerdude/x-tools/arm-kindlepw2-linux-gnueabi/bin/arm-kindlepw2-linux-gnueabi-ar'
+strip = '/home/hackerdude/x-tools/arm-kindlepw2-linux-gnueabi/bin/arm-kindlepw2-linux-gnueabi-strip'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'armel'
+cpu = 'armel'
+endian = 'little'

@@ -1,5 +1,5 @@
 // libscanner stub file to link against
-#include "cJSON.h"
+#include <cjson/cJSON.h>
 
 int scanner_post_change(cJSON *json) { return 0; }
 

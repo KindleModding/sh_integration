@@ -1,8 +1,6 @@
 #include "scanner.h"
-#include "simple_epub_extractor.h"
 #include "simple_sh_extractor.h"
-#include "simple_fb2_extractor.h"
-#include <cJSON.h>
+#include <cjson/cJSON.h>
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -222,7 +220,7 @@ int extractor(const struct scanner_event *event) {
   char *app_path = NULL;
   syslog(LOG_INFO, "glob: %s", event->glob);
   ExtractFile *extractor = NULL;
-  if (strcmp(event->glob, "*.epub") == 0) {
+  /*if (strcmp(event->glob, "*.epub") == 0) {
 
       syslog(LOG_INFO, "indexinfg epub");
     extractor = generate_change_request_epub;
@@ -231,63 +229,67 @@ int extractor(const struct scanner_event *event) {
              strcmp(event->glob, "*.fbz") == 0 ) {
     syslog(LOG_INFO, "indexinfg fb2");
     extractor = generate_change_request_fb2;
+  }*/
+  if (strcmp(event->glob, "*.sh") == 0) {
+    syslog(LOG_INFO, "indexing SH file");
   }
+  extractor = generate_change_request_sh;
 
   switch (event->event_type) {
-  case SCANNER_ADD:
-    log_file = fopen("/tmp/epub_extractor.log", "a");
-    if (log_file) {
-      fprintf(log_file,
-              "SCANNER_ADD path: %s, filename: %s, uuid: %s, glob: %s\n",
-              event->path, event->filename, event->uuid, event->glob);
-      fflush(log_file);
-      fclose(log_file);
-    }
-    index_file(event->path, event->filename, extractor);
-    break;
+    case SCANNER_ADD:
+      log_file = fopen("/tmp/epub_extractor.log", "a");
+      if (log_file) {
+        fprintf(log_file,
+                "SCANNER_ADD path: %s, filename: %s, uuid: %s, glob: %s\n",
+                event->path, event->filename, event->uuid, event->glob);
+        fflush(log_file);
+        fclose(log_file);
+      }
+      index_file(event->path, event->filename, extractor);
+      break;
 
-  case SCANNER_DELETE:
-    log_file = fopen("/tmp/epub_extractor.log", "a");
-    if (log_file) {
-      fprintf(log_file,
-              "SCANNER_DELETE path: %s, filename: %s, uuid: %s, glob: %s\n",
-              event->path, event->filename, event->uuid, event->glob);
-      fflush(log_file);
-      fclose(log_file);
-    }
+    case SCANNER_DELETE:
+      log_file = fopen("/tmp/epub_extractor.log", "a");
+      if (log_file) {
+        fprintf(log_file,
+                "SCANNER_DELETE path: %s, filename: %s, uuid: %s, glob: %s\n",
+                event->path, event->filename, event->uuid, event->glob);
+        fflush(log_file);
+        fclose(log_file);
+      }
 
-    // Create full path for deletion
-    app_path = malloc(strlen(event->path) + strlen(event->filename) + 2);
-    if (app_path) {
-      sprintf(app_path, "%s/%s", event->path, event->filename);
-      remove(app_path);
-      free(app_path);
-    }
+      // Create full path for deletion
+      app_path = malloc(strlen(event->path) + strlen(event->filename) + 2);
+      if (app_path) {
+        sprintf(app_path, "%s/%s", event->path, event->filename);
+        remove(app_path);
+        free(app_path);
+      }
 
-    // Delete entry from ccat
-    scanner_delete_ccat_entry(event->uuid);
-    break;
+      // Delete entry from ccat
+      scanner_delete_ccat_entry(event->uuid);
+      break;
 
-  case SCANNER_UPDATE:
-    log_file = fopen("/tmp/epub_extractor.log", "a");
-    if (log_file) {
-      fprintf(log_file,
-              "SCANNER_UPDATE path: %s, filename: %s, uuid: %s, glob: %s\n",
-              event->path, event->filename, event->uuid, event->glob);
-      fflush(log_file);
-      fclose(log_file);
-    }
-    break;
+    case SCANNER_UPDATE:
+      log_file = fopen("/tmp/epub_extractor.log", "a");
+      if (log_file) {
+        fprintf(log_file,
+                "SCANNER_UPDATE path: %s, filename: %s, uuid: %s, glob: %s\n",
+                event->path, event->filename, event->uuid, event->glob);
+        fflush(log_file);
+        fclose(log_file);
+      }
+      break;
 
-  default:
-    log_file = fopen("/tmp/epub_extractor.log", "a");
-    index_file(event->path, event->filename, extractor);
-    if (log_file) {
-      fprintf(log_file, "Unknown event type: %d\n", event->event_type);
-      fflush(log_file);
-      fclose(log_file);
-    }
-    return 0;
+    default:
+      log_file = fopen("/tmp/epub_extractor.log", "a");
+      index_file(event->path, event->filename, extractor);
+      if (log_file) {
+        fprintf(log_file, "Unknown event type: %d\n", event->event_type);
+        fflush(log_file);
+        fclose(log_file);
+      }
+      return 0;
   }
   return 0;
 }

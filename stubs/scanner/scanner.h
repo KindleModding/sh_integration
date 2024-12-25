@@ -1,4 +1,4 @@
-#include "cJSON.h"
+#include <cjson/cJSON.h>
 
 enum ScannerEventType {
   SCANNER_ADD,

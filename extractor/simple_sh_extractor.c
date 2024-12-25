@@ -1,4 +1,4 @@
-#include <cJSON.h>
+#include <cjson/cJSON.h>
 #include "utils.h"
 #include <dlfcn.h>
 #include <stdio.h>
@@ -71,7 +71,7 @@ char* read_file(const char* filename) {
 cJSON *generate_change_request_sh(const char *file_path, const char *uuid) {
   syslog(LOG_INFO, "Generating change request for %s\n", file_path);
 
-  char *meta_inf = NULL;
+  //char *meta_inf = NULL;
   cJSON *json = NULL;
   struct stat st;
   stat(file_path, &st);
