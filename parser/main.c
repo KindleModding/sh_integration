@@ -1,5 +1,5 @@
 #include "scanner.h"
-#include "simple_sh_extractor.h"
+#include "simple_sh_parser.h"
 #include <cjson/cJSON.h>
 #include <regex.h>
 #include <stdio.h>
@@ -10,8 +10,8 @@
 #include <time.h>
 #include <unistd.h>
 
-typedef cJSON *(ExtractFile)(const char *file_path, const char *uuid);
-void index_file(char *path, char *filename, ExtractFile *extractor) {
+typedef cJSON *(ParseFile)(const char *file_path, const char *uuid);
+void index_file(char *path, char *filename, ParseFile *parser) {
   char *full_path = NULL;
   char uuid[37] = {0};
   cJSON *json = NULL;
@@ -64,7 +64,7 @@ void index_file(char *path, char *filename, ExtractFile *extractor) {
     goto cleanup;
   }
 
-  change = extractor(full_path, uuid);
+  change = parser(full_path, uuid);
   if (!change) {
     syslog(LOG_CRIT, "Failed to generate a change request");
     goto cleanup;
@@ -215,29 +215,29 @@ cleanup:
   }
 }
 
-int extractor(const struct scanner_event *event) {
+int parser(const struct scanner_event *event) {
   FILE *log_file = NULL;
   char *app_path = NULL;
   syslog(LOG_INFO, "glob: %s", event->glob);
-  ExtractFile *extractor = NULL;
+  ParseFile *parser = NULL;
   /*if (strcmp(event->glob, "*.epub") == 0) {
 
       syslog(LOG_INFO, "indexinfg epub");
-    extractor = generate_change_request_epub;
+    parser = generate_change_request_epub;
   } else if (strcmp(event->glob, "*.fb2") == 0 ||
              strcmp(event->glob, "*.fb2.zip") == 0 ||
              strcmp(event->glob, "*.fbz") == 0 ) {
     syslog(LOG_INFO, "indexinfg fb2");
-    extractor = generate_change_request_fb2;
+    parser = generate_change_request_fb2;
   }*/
   if (strcmp(event->glob, "*.sh") == 0) {
     syslog(LOG_INFO, "indexing SH file");
   }
-  extractor = generate_change_request_sh;
+  parser = generate_change_request_sh;
 
   switch (event->event_type) {
     case SCANNER_ADD:
-      log_file = fopen("/tmp/epub_extractor.log", "a");
+      log_file = fopen("/mnt/us/epub_parser.log", "a");
       if (log_file) {
         fprintf(log_file,
                 "SCANNER_ADD path: %s, filename: %s, uuid: %s, glob: %s\n",
@@ -245,11 +245,11 @@ int extractor(const struct scanner_event *event) {
         fflush(log_file);
         fclose(log_file);
       }
-      index_file(event->path, event->filename, extractor);
+      index_file(event->path, event->filename, parser);
       break;
 
     case SCANNER_DELETE:
-      log_file = fopen("/tmp/epub_extractor.log", "a");
+      log_file = fopen("/mnt/us/epub_parser.log", "a");
       if (log_file) {
         fprintf(log_file,
                 "SCANNER_DELETE path: %s, filename: %s, uuid: %s, glob: %s\n",
@@ -271,7 +271,7 @@ int extractor(const struct scanner_event *event) {
       break;
 
     case SCANNER_UPDATE:
-      log_file = fopen("/tmp/epub_extractor.log", "a");
+      log_file = fopen("/mnt/us/epub_parser.log", "a");
       if (log_file) {
         fprintf(log_file,
                 "SCANNER_UPDATE path: %s, filename: %s, uuid: %s, glob: %s\n",
@@ -282,8 +282,8 @@ int extractor(const struct scanner_event *event) {
       break;
 
     default:
-      log_file = fopen("/tmp/epub_extractor.log", "a");
-      index_file(event->path, event->filename, extractor);
+      log_file = fopen("/mnt/us/epub_parser.log", "a");
+      index_file(event->path, event->filename, parser);
       if (log_file) {
         fprintf(log_file, "Unknown event type: %d\n", event->event_type);
         fflush(log_file);
@@ -295,9 +295,9 @@ int extractor(const struct scanner_event *event) {
 }
 
 [[gnu::visibility("default")]]
-int load_extractors(ScannerEventHandler **handler, int *unk1) {
-  openlog("notmarek.extractor", LOG_PID, LOG_DAEMON);
-  *handler = extractor;
+int load_parser(ScannerEventHandler **handler, int *unk1) {
+  openlog("com.notmarek.shell_integration.parser", LOG_PID, LOG_DAEMON);
+  *handler = parser;
   *unk1 = 0;
   return 0;
 }

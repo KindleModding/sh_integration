@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "simple_sh_extractor.h"
+#include "simple_sh_parser.h"
 
 int parse_shell_integration_app(const char* input, char* name, char* author, char* icon) {
     regex_t regex;
