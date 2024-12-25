@@ -10,7 +10,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#define SERVICE_NAME "com.notmarek.sh_it.launcher"
+#define SERVICE_NAME "com.notmarek.shell_integration.launcher"
 bool done = false;
 pid_t app_pid = -1;
 
