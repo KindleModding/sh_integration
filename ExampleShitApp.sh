@@ -1,6 +1,6 @@
 #!/bin/sh
-# Name: Example shit app
+# Name: Example SH_IT app
 # Author: NotMarek
-# Icon: /mnt/us/shitapp.jpg
+# Icon: /mnt/us/script.jpg
 
 echo "I was launched with SH-IT!"

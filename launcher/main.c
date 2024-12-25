@@ -10,7 +10,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#define SERVICE_NAME "com.notmarek.shit.launcher"
+#define SERVICE_NAME "com.notmarek.sh_it.launcher"
 bool done = false;
 pid_t app_pid = -1;
 
@@ -57,11 +57,11 @@ char *url_decode(char *str) {
 
 
 LIPCcode unload(LIPC *lipc, const char *property, void *value, void *data) {
-  syslog(LOG_INFO, "Unloading shit launcher");
-  char *id = strtok((char *)value, ":");
-  char *uri = strtok(NULL, "");
-  char *path = uri + strlen("app://") + strlen(SERVICE_NAME);
-  char *decoded = url_decode(path);
+  syslog(LOG_INFO, "Unloading shell integration launcher");
+  //char *id = strtok((char *)value, ":");
+  //char *uri = strtok(NULL, "");
+  //char *path = uri + strlen("app://") + strlen(SERVICE_NAME);
+  //char *decoded = url_decode(path);
   kill(app_pid, SIGINT);
   syslog(LOG_INFO, "Sent SIGINT to our app");
   LIPCcode result = stub(lipc, property, value, data);
@@ -73,7 +73,7 @@ LIPCcode go(LIPC *lipc, const char *property, void *value, void *data) {
   if (app_pid != -1) {
     kill(app_pid, SIGINT);
   }
-  char *id = strtok((char *)value, ":");
+  //char *id = strtok((char *)value, ":");
   char *uri = strtok(NULL, "");
   char *path = uri + strlen("app://") + strlen(SERVICE_NAME);
   char cmd[4096] = {0};
@@ -89,9 +89,8 @@ LIPCcode go(LIPC *lipc, const char *property, void *value, void *data) {
 
 int main(void) {
   LIPC *lipc;
-  char *status;
   LIPCcode code;
-  openlog("shit_app_helper", LOG_PID, LOG_DAEMON);
+  openlog("sh_it_app_helper", LOG_PID, LOG_DAEMON);
   lipc = LipcOpenEx(SERVICE_NAME, &code);
   if (code != LIPC_OK)
     return 1;

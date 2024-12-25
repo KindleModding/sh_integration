@@ -7,4 +7,4 @@ sources = files(
 #    './src/includes'
 #)
 
-library('sh_integration_extractor', sources, include_directories: './', dependencies: [ lipc_stub_dep, scanner_stub_dep, libxml2_stub_dep ])
+library('sh_integration_extractor', sources, include_directories: './', dependencies: [ lipc_stub_dep, scanner_stub_dep, libxml2_stub_dep ], name_prefix: '')

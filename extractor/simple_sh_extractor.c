@@ -13,12 +13,12 @@
 #include <string.h>
 #include "simple_sh_extractor.h"
 
-int parse_shit_app(const char* input, char* name, char* author, char* icon) {
+int parse_shell_integration_app(const char* input, char* name, char* author, char* icon) {
     regex_t regex;
     regmatch_t matches[4];
 
     const char* pattern =
-        "#\\sSH-IT\\sAPP\\s#$\n"
+        "#!/bin/sh\n"
         "#\\sName:\\s([^#\\n]+)$\n"
         "#\\sAuthor:\\s([^#\\n]+)$\n"
         "#\\sIcon:\\s([^#\\n]+)$";
@@ -78,11 +78,11 @@ cJSON *generate_change_request_sh(const char *file_path, const char *uuid) {
   char name[256];
   char author[256];
   char icon[1024];
-  char* shit_app = read_file(file_path);
-  parse_shit_app(shit_app, (char*)&name, (char*)&author, (char*)&icon);
+  char* shell_integration_app = read_file(file_path);
+  parse_shell_integration_app(shell_integration_app, (char*)&name, (char*)&author, (char*)&icon);
 
-  json = generate_change_request("application/shit", uuid, file_path,
+  json = generate_change_request("text/x-shellscript", uuid, file_path,
                                    st.st_mtim.tv_sec, st.st_size, author,
-                                   "SHIT", name, icon);
+                                   "KMC", name, icon);
   return json;
 }
