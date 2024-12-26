@@ -2,6 +2,7 @@
 #include <csignal>
 #include <cstddef>
 #include <cstdio>
+#include <cstring>
 #include <sys/syslog.h>
 #include <unistd.h>
 #include <string>
@@ -36,13 +37,14 @@ LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
 
 LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
     std::string uri(static_cast<char*>(value));
-    std::string command = "/var/local/mkk/su su -c \"" + uri.substr(uri.find(' ') + 1) + '"';
+    // uri format: "2:app://com.notmarek.shell_integration.launcher/mnt/us/documents/run_bridge.sh"
+    std::string command = "/var/local/mkk/su su -c \"" + uri.substr(uri.find(':') + 6 + strlen(SERVICE_NAME) + 1) + '"';
 
     syslog(LOG_INFO, "Invoking app using \"%s\"", command.c_str());
     // Run the app on a background thread
     app_pid = fork();
     if (app_pid == 0) {
-        // we are runnning as framework call gandalf for help
+        // we are runnniang as framework call gandalf for help
         execl("/var/local/mkk/su", "su", "-c", command.c_str(), NULL);
     }
 

@@ -26,11 +26,11 @@ cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) 
 
             // Start reading the header
             if (line.substr(0, 8) == "# Name: ") {
-                name_string = line.substr(9);
+                name_string = line.substr(8);
             } else if (line.substr(0, 10) == "# Author: ") {
-                author_string = line.substr(11);
+                author_string = line.substr(10);
             } else if (line.substr(0, 8) == "# Icon: ") {
-                icon_string = line.substr(9);
+                icon_string = line.substr(8);
             }
         }
     }
