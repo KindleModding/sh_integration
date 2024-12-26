@@ -55,7 +55,7 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
     app_pid = fork();
     syslog(LOG_INFO, "Our app PID \"%d\"", app_pid);
     if (app_pid == 0) {
-        // we are runnniang as framework call gandalf for help
+        // we are running as framework call gandalf for help
         execl("/var/local/mkk/su", "su", "-c", command.c_str(), NULL);
     }
 
@@ -78,7 +78,7 @@ int main(void) {
 
     while (!shouldExit) {
         sleep(1);
-        
+
         if (app_pid > 0) { // This is the parent process AND we have spwned the child
             // Wait for child process to quit
             wait(NULL);
