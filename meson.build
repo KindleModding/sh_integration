@@ -15,7 +15,7 @@ cjson_dep = cjson.dependency('cjson')
 
 subdir('./stubs')
 subdir('./launcher')
-subdir('./parser')
+subdir('./extractor')
 
 ##sources = files(
 ##    './src/sh_runner.cpp'

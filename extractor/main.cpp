@@ -180,7 +180,7 @@ void index_file(char *path, char* filename) {
     return;
 }
 
-int parser(const struct scanner_event* event) {
+int extractor(const struct scanner_event* event) {
     std::filesystem::path appPath;
 
     switch (event->event_type) {
@@ -203,9 +203,9 @@ int parser(const struct scanner_event* event) {
     return 0;
 }
 
-extern "C" __attribute__((__visibility__("default"))) int load_parser(ScannerEventHandler** handler, int *unk1) {
-  openlog("com.notmarek.shell_integration.parser", LOG_PID, LOG_DAEMON);
-  *handler = parser;
+extern "C" __attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
+  openlog("com.notmarek.shell_integration.extractor", LOG_PID, LOG_DAEMON);
+  *handler = extractor;
   *unk1 = 0;
   return 0;
 }
