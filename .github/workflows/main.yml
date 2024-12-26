@@ -63,7 +63,7 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         name: arm-kindlepw2-linux-gnueabi
-        path: ~/x-tools/
+        path: ~/x-tools/arm-kindlepw2-linux-gnueabi
     - name: build
       run: |
           sudo apt-get install meson
@@ -85,7 +85,7 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         name: arm-kindlehf-linux-gnueabihf
-        path: ~/x-tools/
+        path: ~/x-tools/arm-kindlehf-linux-gnueabihf
     - name: build
       run: |
           sudo apt-get install meson
