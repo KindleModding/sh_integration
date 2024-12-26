@@ -89,10 +89,10 @@ int main(void) {
             char* value;
             LipcGetStringProperty(lipc, "com.lab126.appmgrd", "popAppHistory", &value);
             LipcFreeString(value);
-            LipcClose(lipc);
         }
     }
 
     syslog(LOG_INFO, "Running exit routine with PID: %d", app_pid);
+    LipcClose(lipc);
     return 0;
 }
