@@ -33,8 +33,8 @@ cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) 
                 icon_string = line.substr(8);
             }
         }
+        file.close(); // We are done reading the file
     }
-    file.close(); // We are done reading the file
 
     struct stat st;
     stat(filePath.c_str(), &st);

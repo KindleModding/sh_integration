@@ -1,8 +1,10 @@
 #include "openlipc.h"
+#include <cerrno>
 #include <csignal>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <sys/stat.h>
 #include <sys/syslog.h>
 #include <sys/wait.h>
@@ -11,6 +13,7 @@
 
 #define SERVICE_NAME "com.notmarek.shell_integration.launcher"
 
+int childStatus;
 pid_t app_pid = -1;
 bool shouldExit = false;
 
@@ -27,6 +30,10 @@ LIPCcode stub(LIPC* lipc, const char* property, void* value, void* data) {
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", target.c_str(), response.c_str());
 
     return LIPC_OK;
+}
+
+LIPCcode pause(LIPC* lipc, const char* property, void* value, void* data) {
+    return stub(lipc, property,value, data);
 }
 
 LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
@@ -46,9 +53,43 @@ LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
 }
 
 LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
-    std::string uri(static_cast<char*>(value));
-    // uri format: "2:app://com.notmarek.shell_integration.launcher/mnt/us/documents/run_bridge.sh"
-    std::string command = uri.substr(uri.find(':') + 6 + strlen(SERVICE_NAME) + 1);
+    const std::string uri(static_cast<char*>(value));
+    const std::string rawFilePath = uri.substr(uri.find(':') + 6 + strlen(SERVICE_NAME) + 1);
+    std::string filePath;
+
+    syslog(LOG_INFO, "Raw path: \"%s\"", rawFilePath.c_str());
+
+    // Parse the filePath as it is urlencoded
+    for (size_t i=0; i < rawFilePath.length(); i++) {
+        if (rawFilePath[i] == '%') {
+            filePath += (char)((rawFilePath[i+1] - '0') * 16 + (rawFilePath[i+2] - '0'));
+            i += 2;
+        } else {
+            filePath += rawFilePath[i];
+        }
+    }
+
+    bool useFBInk = true;
+    std::string line;
+    std::ifstream file(filePath);
+    if (file.is_open()) {
+        for (int i=0; i < 5; i++) {
+            if (!std::getline(file, line)) {
+                break;
+            }
+
+            // Start reading the header
+            if (line.substr(0, 14) == "# DontUseFBInk") {
+                useFBInk = false;
+            }
+        }
+        file.close(); // We are done reading the file
+    }
+
+    std::string command = '"' + filePath + '"';
+    if (useFBInk) {
+        command = "/mnt/us/libkh/bin/fbink -k; " + command + " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -S 3"; // Send output to fbink
+    }
 
     syslog(LOG_INFO, "Invoking app using \"%s\"", command.c_str());
     // Run the app on a background thread
@@ -72,7 +113,7 @@ int main(void) {
 
     LipcRegisterStringProperty(lipc, "load", NULL, stub, NULL);
     LipcRegisterStringProperty(lipc, "unload", NULL, unload, NULL);
-    LipcRegisterStringProperty(lipc, "pause", NULL, stub, NULL);
+    LipcRegisterStringProperty(lipc, "pause", NULL, pause, NULL);
     LipcRegisterStringProperty(lipc, "go", NULL, go, NULL);
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", "runresult",  "0:" SERVICE_NAME);
 
@@ -81,7 +122,7 @@ int main(void) {
 
         if (app_pid > 0) { // This is the parent process AND we have spwned the child
             // Wait for child process to quit
-            wait(NULL);
+            waitpid(app_pid, &childStatus, 0);
 
             app_pid = -1; // So we know the program has quit
 
