@@ -1,4 +1,5 @@
 #include "openlipc.h"
+#include <csignal>
 #include <cstddef>
 #include <cstdio>
 #include <sys/syslog.h>
@@ -64,9 +65,16 @@ int main(void) {
 
     while (!shouldExit) {
         sleep(1);
+
+        if (app_pid > 0) { // This is the parent process
+            if (kill(app_pid, 0) != 0) {
+                // PID does not exist, likely shell has quit
+                shouldExit = true;
+            };
+        }
     }
 
-    // As we close read from the appmgr to quit this app
+    // As we exit - read from the appmgr to quit this app
     char* value;
     LipcGetStringProperty(lipc, "com.lab126.appmgrd", "popAppHistory", &value);
     LipcFreeString(value);
