@@ -29,7 +29,12 @@ LIPCcode stub(LIPC* lipc, const char* property, void* value, void* data) {
 
 LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
     syslog(LOG_INFO, "Unloading shell integration launcher");
+    
     // Kill the app if it's running
+    if (app_pid > 0) {
+        kill(app_pid, SIGKILL);
+    }
+
     const LIPCcode result = stub(lipc, property, value, data);
     // Quit app
     return result;
@@ -63,7 +68,7 @@ int main(void) {
     LipcRegisterStringProperty(lipc, "unload", NULL, unload, NULL);
     LipcRegisterStringProperty(lipc, "pause", NULL, stub, NULL);
     LipcRegisterStringProperty(lipc, "go", NULL, go, NULL);
-    LipcSetStringProperty(lipc, "com.lab126.appmgrd", "runresult",  "0:" SERVICE_NAME "");
+    LipcSetStringProperty(lipc, "com.lab126.appmgrd", "runresult",  "0:" SERVICE_NAME);
 
     while (!shouldExit) {
         sleep(1);
