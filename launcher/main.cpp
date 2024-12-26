@@ -34,9 +34,10 @@ LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
     if (app_pid > 0) {
         kill(app_pid, SIGKILL);
     }
-
+    
     const LIPCcode result = stub(lipc, property, value, data);
     // Quit app
+    shouldExit = false;
     return result;
 }
 
@@ -48,6 +49,7 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
     syslog(LOG_INFO, "Invoking app using \"%s\"", command.c_str());
     // Run the app on a background thread
     app_pid = fork();
+    syslog(LOG_INFO, "Our app PID \"%d\"", app_pid);
     if (app_pid == 0) {
         // we are runnniang as framework call gandalf for help
         execl("/var/local/mkk/su", "su", "-c", command.c_str(), NULL);
