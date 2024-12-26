@@ -79,7 +79,7 @@ jobs:
           meson compile
     - uses: actions/upload-artifact@v4
       with:
-        name: kindlepw2
+        name: sh_integration-kindlepw2
         path: builddir_kindlepw2
 
   build-kindlehf:
@@ -107,5 +107,5 @@ jobs:
           meson compile
     - uses: actions/upload-artifact@v4
       with:
-        name: kindlehf
+        name: sh_integration-kindlehf
         path: builddir_kindlehf
