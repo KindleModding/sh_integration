@@ -3,7 +3,9 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <sys/stat.h>
 #include <sys/syslog.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <string>
 
@@ -32,12 +34,14 @@ LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
     
     // Kill the app if it's running
     if (app_pid > 0) {
-        kill(app_pid, SIGKILL);
+        const std::string command = ("/var/local/mkk/su -c \"kill -9 " + std::to_string(app_pid) + "\"");
+        syslog(LOG_INFO, "Killing with: %s", command.c_str());
+        system(command.c_str());
     }
     
     const LIPCcode result = stub(lipc, property, value, data);
     // Quit app
-    shouldExit = false;
+    shouldExit = true;
     return result;
 }
 
@@ -74,19 +78,21 @@ int main(void) {
 
     while (!shouldExit) {
         sleep(1);
+        
+        if (app_pid > 0) { // This is the parent process AND we have spwned the child
+            // Wait for child process to quit
+            wait(NULL);
 
-        if (app_pid > 0) { // This is the parent process
-            if (kill(app_pid, 0) != 0) {
-                // PID does not exist, likely shell has quit
-                shouldExit = true;
-            };
+            app_pid = -1; // So we know the program has quit
+
+            // Calls unload - gracefully exits
+            char* value;
+            LipcGetStringProperty(lipc, "com.lab126.appmgrd", "popAppHistory", &value);
+            LipcFreeString(value);
+            LipcClose(lipc);
         }
     }
 
-    // As we exit - read from the appmgr to quit this app
-    char* value;
-    LipcGetStringProperty(lipc, "com.lab126.appmgrd", "popAppHistory", &value);
-    LipcFreeString(value);
-    LipcClose(lipc);
+    syslog(LOG_INFO, "Running exit routine with PID: %d", app_pid);
     return 0;
 }
