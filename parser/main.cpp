@@ -13,29 +13,24 @@ cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) 
     std::string name_string;
     std::string author_string;
     std::string icon_string;
-    int remaining = 3;
 
     std::string line;
 
     // Read data from file header
     std::ifstream file(filePath);
     if (file.is_open()) {
-        while (std::getline(file, line)) {
-            if (line == "#!/bin/sh") {
-                // Start reading the header
-                while (remaining > 0 && std::getline(file, line)) {
-                    if (line.substr(0, 8) == "# Name: ") {
-                        name_string = line.substr(9);
-                        remaining -= 1;
-                    } else if (line.substr(0, 10) == "# Author: ") {
-                        author_string = line.substr(11);
-                        remaining -= 1;
-                    } else if (line.substr(0, 8) == "# Icon: ") {
-                        icon_string = line.substr(9);
-                        remaining -= 1;
-                    }
-                }
+        for (int i=0; i < 5; i++) {
+            if (!std::getline(file, line)) {
                 break;
+            }
+
+            // Start reading the header
+            if (line.substr(0, 8) == "# Name: ") {
+                name_string = line.substr(9);
+            } else if (line.substr(0, 10) == "# Author: ") {
+                author_string = line.substr(11);
+            } else if (line.substr(0, 8) == "# Icon: ") {
+                icon_string = line.substr(9);
             }
         }
     }
