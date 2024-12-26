@@ -1,3 +1,6 @@
+#pragma once
+extern "C" {
+
 typedef enum {
   XMLDOC,
   XMLTAG,
@@ -72,3 +75,5 @@ xmlChar *xmlNodeGetContent(xmlNode *node);
 void xmlCleanupParser();
 void xmlFree(void *xml);
 xmlDoc *xmlReadFile(const char *filename, const char *encoding, int options);
+
+}

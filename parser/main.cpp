@@ -208,8 +208,7 @@ int parser(const struct scanner_event* event) {
     return 0;
 }
 
-[[gnu::visibility("default")]]
-int load_parser(ScannerEventHandler** handler, int *unk1) {
+extern "C" __attribute__((__visibility__("default"))) int load_parser(ScannerEventHandler** handler, int *unk1) {
   openlog("com.notmarek.shell_integration.parser", LOG_PID, LOG_DAEMON);
   *handler = parser;
   *unk1 = 0;

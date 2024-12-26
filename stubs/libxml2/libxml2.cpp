@@ -1,3 +1,5 @@
+extern "C" {
+
 #include "libxml2.h"
 
 xmlChar *xmlGetProp(xmlNode *node, const xmlChar *name) { return 0; }
@@ -13,3 +15,5 @@ xmlDoc *xmlReadFile(const char *file, const char *encoding, int options) {
   return 0;
 }
 int xmlAddEncodingAlias(const char *name, const char *alias) { return 0; };
+
+}

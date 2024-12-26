@@ -6,6 +6,6 @@ strip = '/home/hackerdude/x-tools/arm-kindlehf-linux-gnueabihf/bin/arm-kindlehf-
 
 [host_machine]
 system = 'linux'
-cpu_family = 'armel'
-cpu = 'armel'
+cpu_family = 'armhf'
+cpu = 'armhf'
 endian = 'little'

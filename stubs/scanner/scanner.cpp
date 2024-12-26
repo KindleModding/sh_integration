@@ -1,3 +1,5 @@
+extern "C" {
+
 // libscanner stub file to link against
 #include "cJSON.h"
 
@@ -18,4 +20,6 @@ void scanner_delete_ccat_entry(char *uuid) { return; }
 
 char* getSha1Hash(const char* data) {
   return "000000000000000";
+}
+
 }
