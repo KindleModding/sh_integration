@@ -86,7 +86,7 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
         file.close(); // We are done reading the file
     }
 
-    std::string command = '"' + filePath + '"';
+    std::string command = "sh \"" + filePath + '"';
     if (useFBInk) {
         command = "/mnt/us/libkh/bin/fbink -k; " + command + " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -S 3"; // Send output to fbink
     }
