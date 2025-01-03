@@ -54,7 +54,12 @@ LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
 
 LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
     const std::string uri(static_cast<char*>(value));
-    const std::string rawFilePath = uri.substr(uri.find(':') + 6 + strlen(SERVICE_NAME) + 1);
+    std::string rawFilePath = uri.substr(uri.find(':') + 6 + strlen(SERVICE_NAME) + 1);
+    const int queryIndex = rawFilePath.find('?');
+    if (queryIndex != -1) {
+        rawFilePath = rawFilePath.substr(0, queryIndex);
+    }
+
     std::string filePath;
 
     syslog(LOG_INFO, "Raw path: \"%s\"", rawFilePath.c_str());
