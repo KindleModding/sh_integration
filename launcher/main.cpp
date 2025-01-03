@@ -102,7 +102,7 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
     syslog(LOG_INFO, "Our app PID \"%d\"", app_pid);
     if (app_pid == 0) {
         // we are running as framework call gandalf for help
-        execl("/var/local/mkk/su", "-c", command.c_str(), NULL);
+        execl("/var/local/mkk/su", "su", "-c", command.c_str(), NULL); // su is first arg bc it expects to be run from a shell ($1 = name of command, duh)
     }
 
     return stub(lipc, property, value, data);
