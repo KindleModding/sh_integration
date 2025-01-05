@@ -74,7 +74,7 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
     }
 
     bool useFBInk = true;
-    bool isFunctional = false;
+    bool useHooks = false;
     std::string line;
     std::ifstream file(filePath);
     if (file.is_open()) {
@@ -86,8 +86,8 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
             // Start reading the header
             if (line.substr(0, 14) == "# DontUseFBInk") {
                 useFBInk = false;
-            } else if (line.substr(0, 12) == "# Functional") {
-                isFunctional = true;
+            } else if (line.substr(0, 10) == "# UseHooks") {
+                useHooks = true;
             }
         }
         file.close(); // We are done reading the file
@@ -102,7 +102,7 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
     }
 
     std::string command = "sh \"" + escapedPath + '"';
-    if (isFunctional) { // Functional script - source it and use `on_run`
+    if (useHooks) { // Functional script - source it and use `on_run`
         command = "sh -c \"source \\\"" + escapedPath + "\\\"; on_run;\"";
     }
     if (useFBInk) {
