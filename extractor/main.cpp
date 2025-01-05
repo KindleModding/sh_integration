@@ -257,7 +257,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
     }
 
     // Actually remove the file (and the entry)
-    std::filesystem::remove(filePath); // This is handled externally on removals (except for updates, I suppose)
+    //std::filesystem::remove(filePath); // This is handled externally, actually
     std::filesystem::remove_all(sdr_path); // Delete sdr folder
     scanner_delete_ccat_entry(uuid);
 }
@@ -273,9 +273,6 @@ int extractor(const struct scanner_event* event) {
             remove_file(event->path, event->filename, event->uuid);
             break;
         case SCANNER_UPDATE:
-            // This is honestly probably the easiest way to deal with this
-            remove_file(event->path, event->filename, event->uuid);
-            index_file(event->path, event->filename);
             break;
         default:
             // Don't run install hooks and such willy-nilly
