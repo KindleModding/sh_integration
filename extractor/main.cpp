@@ -142,7 +142,7 @@ void index_file(char *path, char* filename) {
                 } else if (icon_string[i] == '/') {
                     value = 63;
                 } else if (icon_string[i] != '=') {
-                    printf("Invalid B64 at position %i", i); // Warn
+                    syslog(LOG_WARNING, "Invalid B64 at position %i", i); // Warn
                 }
 
                 // Add data to the currentByte
@@ -151,7 +151,6 @@ void index_file(char *path, char* filename) {
                 processedBits += consumedBits;
 
                 if (processedBits >= 8) {
-                    printf("Adding byte: %i\n", currentByte);
                     file.put(currentByte);
                     processedBits -= 8;
 
