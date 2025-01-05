@@ -93,9 +93,17 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
         file.close(); // We are done reading the file
     }
 
-    std::string command = "sh \"" + filePath + '"';
+    std::string escapedPath = filePath;
+    for (int i=0; i < escapedPath.length(); i++) {
+        if (escapedPath[i] == '"') {
+            escapedPath.insert(i, "\\");
+            i += 1; // Skip character
+        }
+    }
+
+    std::string command = "sh \"" + escapedPath + '"';
     if (isFunctional) { // Functional script - source it and use `on_run`
-        command = "sh -c \"source \\\"" + filePath + "\\\"; on_run;\"";
+        command = "sh -c \"source \\\"" + escapedPath + "\\\"; on_run;\"";
     }
     if (useFBInk) {
         command = "/mnt/us/libkh/bin/fbink -k; " + command + " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r"; // Send output to fbink

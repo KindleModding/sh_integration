@@ -52,8 +52,10 @@ cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) 
             }
         }
 
+        syslog(LOG_INFO, "Running install event");
         const int pid = fork();
         if (pid == 0) {
+            syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_install;").c_str());
             execl("/bin/sh", "-c", ("source \"" + escapedPath + "\"; on_install;").c_str());
         } else {
             waitpid(pid, NULL, 0);
@@ -108,7 +110,7 @@ cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) 
     return json;
 }
 
-typedef cJSON* (ChangeRequestGenerator)(const char* file_path, const char* uuid);
+typedef cJSON* (ChangeRequestGenerator)(const char*& file_path, const char*& uuid);
 void index_file(char *path, char* filename) {
     syslog(LOG_INFO, "Indexing file: %s/%s", path, filename);
 
@@ -203,7 +205,7 @@ void index_file(char *path, char* filename) {
     cJSON_Delete(json);
 }
 
-void remove_file(char *path, char* filename, char* uuid) {
+void remove_file(const char* path, const char* filename, char* uuid) {
     syslog(LOG_INFO, "Removing file: %s/%s", path, filename);
     std::filesystem::path filePath;
     filePath += path;
@@ -229,19 +231,23 @@ void remove_file(char *path, char* filename, char* uuid) {
     }
 
     // If the file is functional, run install hook
-    std::string escapedPath = filePath.string();
-    for (int i=0; i < escapedPath.length(); i++) {
-        if (escapedPath[i] == '"') {
-            escapedPath.insert(i, "\\");
-            i += 1; // Skip character
+    if (isFunctional) {
+        std::string escapedPath = filePath.string();
+        for (int i=0; i < escapedPath.length(); i++) {
+            if (escapedPath[i] == '"') {
+                escapedPath.insert(i, "\\");
+                i += 1; // Skip character
+            }
         }
-    }
 
-    const int pid = fork();
-    if (pid == 0) {
-        execl("/bin/sh", "-c", ("source \"" + escapedPath + "\"; on_remove;").c_str());
-    } else {
-        waitpid(pid, NULL, 0);
+        syslog(LOG_INFO, "Running remove event");
+        const int pid = fork();
+        if (pid == 0) {
+            syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_remove;").c_str());
+            execl("/bin/sh", "-c", ("source \"" + escapedPath + "\"; on_remove;").c_str());
+        } else {
+            waitpid(pid, NULL, 0);
+        }
     }
 
     // Actually remove the file (and the entry)
