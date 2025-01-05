@@ -9,58 +9,8 @@
 #include <unistd.h>
 #include "cJSON.h"
 
-cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) {
+cJSON* generateChangeRequest(const std::filesystem::path& filePath, const char* uuid, const std::string& name_string, const std::string& author_string, const std::string& icon_string) {
     syslog(LOG_INFO, "Generating change request for %s\n", filePath.c_str());
-
-    std::string name_string;
-    std::string author_string;
-    std::string icon_string;
-
-    std::string line;
-
-    bool isFunctional = false;
-
-    // Read data from file header
-    std::ifstream file(filePath);
-    if (file.is_open()) {
-        for (int i=0; i < 6; i++) {
-            if (!std::getline(file, line)) {
-                break;
-            }
-
-            // Start reading the header
-            if (line.substr(0, 8) == "# Name: ") {
-                name_string = line.substr(8);
-            } else if (line.substr(0, 10) == "# Author: ") {
-                author_string = line.substr(10);
-            } else if (line.substr(0, 8) == "# Icon: ") {
-                icon_string = line.substr(8);
-            } else if (line.substr(0, 12) == "# Functional") {
-                isFunctional = true;
-            }
-        }
-        file.close(); // We are done reading the file
-    }
-
-    // If the file is functional, run install hook
-    if (isFunctional) {
-        std::string escapedPath = filePath.string();
-        for (int i=0; i < escapedPath.length(); i++) {
-            if (escapedPath[i] == '"') {
-                escapedPath.insert(i, "\\");
-                i += 1; // Skip character
-            }
-        }
-
-        syslog(LOG_INFO, "Running install event");
-        const int pid = fork();
-        if (pid == 0) {
-            syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_install;").c_str());
-            execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedPath + "\"; on_install;").c_str(), NULL);
-        } else {
-            waitpid(pid, NULL, 0);
-        }
-    }
 
     struct stat st;
     stat(filePath.c_str(), &st);
@@ -123,6 +73,66 @@ void index_file(char *path, char* filename) {
     char uuid[37] = {0};
     scanner_gen_uuid(uuid, 37);
 
+    // Parse file data
+    std::string name_string;
+    std::string author_string;
+    std::string icon_string;
+
+    std::string line;
+
+    bool useHooks = false;
+
+    // Read data from file header
+    std::ifstream file(full_path);
+    if (file.is_open()) {
+        for (int i=0; i < 6; i++) {
+            if (!std::getline(file, line)) {
+                break;
+            }
+
+            // Start reading the header
+            if (line.substr(0, 8) == "# Name: ") {
+                name_string = line.substr(8);
+            } else if (line.substr(0, 10) == "# Author: ") {
+                author_string = line.substr(10);
+            } else if (line.substr(0, 8) == "# Icon: ") {
+                icon_string = line.substr(8);
+            } else if (line.substr(0, 10) == "# UseHooks") {
+                useHooks = true;
+            }
+        }
+        file.close(); // We are done reading the file
+    }
+
+    if (useHooks) { // @TODO: This will also house the base64 image checker and extractor
+        // Create sdr folder
+        std::string sdr_path = full_path.string() + ".sdr";
+        std::filesystem::create_directory(sdr_path);
+
+        // If the file is functional, run install hook
+        if (useHooks) {
+            std::string escapedPath = full_path.string();
+            for (int i=0; i < escapedPath.length(); i++) {
+                if (escapedPath[i] == '"') {
+                    escapedPath.insert(i, "\\");
+                    i += 1; // Skip character
+                }
+            }
+
+            syslog(LOG_INFO, "Running install event");
+            const int pid = fork();
+            if (pid == 0) {
+                syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_install;").c_str());
+                execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedPath + "\"; on_install;").c_str(), NULL);
+            } else {
+                waitpid(pid, NULL, 0);
+            }
+
+            std::filesystem::copy_file(full_path, sdr_path + "/script.sh"); // We copy the script to sdr folder in case we need 
+        }
+    }
+
+
     // Create JSON objects
     cJSON* json = cJSON_CreateObject();
     if (!json) {
@@ -147,7 +157,7 @@ void index_file(char *path, char* filename) {
         return;
     }
 
-    cJSON* change = generateChangeRequest(full_path, uuid);
+    cJSON* change = generateChangeRequest(full_path, uuid, name_string, author_string, icon_string);
     if (!change) {
         syslog(LOG_CRIT, "Failed to generate a change request...");
         cJSON_Delete(json);
@@ -211,7 +221,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
     filePath += path;
     filePath += "/";
     filePath += filename;
-    bool isFunctional = false;
+    bool useHooks = false;
 
     // Read data from file header
     std::string line;
@@ -223,8 +233,8 @@ void remove_file(const char* path, const char* filename, char* uuid) {
             }
             
             // Look for Functional flag
-            if (line.substr(0, 12) == "# Functional") {
-                isFunctional = true;
+            if (line.substr(0, 10) == "# UseHooks") {
+                useHooks = true;
             }
         }
         file.close(); // We are done reading the file
@@ -233,11 +243,11 @@ void remove_file(const char* path, const char* filename, char* uuid) {
     }
 
     // If the file is functional, run install hook
-    if (isFunctional) {
-        std::string escapedPath = filePath.string();
-        for (int i=0; i < escapedPath.length(); i++) {
-            if (escapedPath[i] == '"') {
-                escapedPath.insert(i, "\\");
+    if (useHooks) {
+        std::string escapedScriptPath = filePath.string() + ".sdr/script.sh";
+        for (int i=0; i < escapedScriptPath.length(); i++) {
+            if (escapedScriptPath[i] == '"') { // Who thought this was a good idea???
+                escapedScriptPath.insert(i, "\\");
                 i += 1; // Skip character
             }
         }
@@ -245,15 +255,20 @@ void remove_file(const char* path, const char* filename, char* uuid) {
         syslog(LOG_INFO, "Running remove event");
         const int pid = fork();
         if (pid == 0) {
-            syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_remove;").c_str());
-            execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedPath + "\"; on_remove;").c_str(), NULL);
+            syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedScriptPath + "\"; on_remove;").c_str());
+            execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedScriptPath + "\"; on_remove;").c_str(), NULL);
         } else {
             waitpid(pid, NULL, 0);
         }
     }
 
+    if (useHooks) { // @TODO: Reserved for base64 icon implementation
+        // Delete the sdr folder
+        std::filesystem::remove_all(filePath.string() + ".sdr");
+    }
+
     // Actually remove the file (and the entry)
-    std::filesystem::remove(filePath);
+    std::filesystem::remove(filePath); // Juuuuust in case (shouldn't be needed, pretty sure this is handled externally)
     scanner_delete_ccat_entry(uuid);
 }
 
