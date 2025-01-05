@@ -228,6 +228,8 @@ void remove_file(const char* path, const char* filename, char* uuid) {
             }
         }
         file.close(); // We are done reading the file
+    } else {
+        syslog(LOG_INFO, "Unable to open file %s", filePath.string().c_str());
     }
 
     // If the file is functional, run install hook
