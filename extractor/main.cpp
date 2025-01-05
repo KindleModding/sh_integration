@@ -16,10 +16,12 @@ cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) 
 
     std::string line;
 
+    bool isFunctional = false;
+
     // Read data from file header
     std::ifstream file(filePath);
     if (file.is_open()) {
-        for (int i=0; i < 5; i++) {
+        for (int i=0; i < 6; i++) {
             if (!std::getline(file, line)) {
                 break;
             }
@@ -31,9 +33,16 @@ cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) 
                 author_string = line.substr(10);
             } else if (line.substr(0, 8) == "# Icon: ") {
                 icon_string = line.substr(8);
+            } else if (line.substr(0, 12) == "# Functional") {
+                isFunctional = true;
             }
         }
         file.close(); // We are done reading the file
+    }
+
+    // If the file is functional, run install hook
+    if (isFunctional) {
+        system(("sh -c \"source \\\"" + filePath.string() + "\\\"\"; on_install;").c_str());
     }
 
     struct stat st;
@@ -177,7 +186,41 @@ void index_file(char *path, char* filename) {
     syslog(LOG_INFO, "ccat error: %d.", result);
 
     cJSON_Delete(json);
-    return;
+}
+
+void remove_file(char *path, char* filename, char* uuid) {
+    syslog(LOG_INFO, "Removing file: %s/%s", path, filename);
+    std::filesystem::path filePath;
+    filePath += path;
+    filePath += "/";
+    filePath += filename;
+    bool isFunctional = false;
+
+    // Read data from file header
+    std::string line;
+    std::ifstream file(filePath);
+    if (file.is_open()) {
+        for (int i=0; i < 6; i++) {
+            if (!std::getline(file, line)) {
+                break;
+            }
+            
+            // Look for Functional flag
+            if (line.substr(0, 12) == "# Functional") {
+                isFunctional = true;
+            }
+        }
+        file.close(); // We are done reading the file
+    }
+
+    // If the file is functional, run install hook
+    if (isFunctional) {
+        system(("sh -c \"source \\\"" + filePath.string() + "\\\"\"; on_remove;").c_str());
+    }
+
+    // Actually remove the file (and the entry)
+    std::filesystem::remove(filePath);
+    scanner_delete_ccat_entry(uuid);
 }
 
 int extractor(const struct scanner_event* event) {
@@ -188,16 +231,14 @@ int extractor(const struct scanner_event* event) {
             index_file(event->path, event->filename);
             break;
         case SCANNER_DELETE:
-            appPath += event->path;
-            appPath += '/';
-            appPath += event->filename;
-            std::filesystem::remove(appPath);
-            scanner_delete_ccat_entry(event->uuid);
+            remove_file(event->path, event->filename, event->uuid);
             break;
         case SCANNER_UPDATE:
             break;
         default:
-            index_file(event->path, event->filename);
+            // Don't run install hooks and such willy-nilly
+            //index_file(event->path, event->filename);
+            break;
     }
 
     return 0;

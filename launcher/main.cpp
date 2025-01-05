@@ -75,10 +75,11 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
     }
 
     bool useFBInk = true;
+    bool isFunctional = false;
     std::string line;
     std::ifstream file(filePath);
     if (file.is_open()) {
-        for (int i=0; i < 5; i++) {
+        for (int i=0; i < 6; i++) {
             if (!std::getline(file, line)) {
                 break;
             }
@@ -86,12 +87,17 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
             // Start reading the header
             if (line.substr(0, 14) == "# DontUseFBInk") {
                 useFBInk = false;
+            } else if (line.substr(0, 12) == "# Functional") {
+                isFunctional = true;
             }
         }
         file.close(); // We are done reading the file
     }
 
     std::string command = "sh \"" + filePath + '"';
+    if (isFunctional) { // Functional script - source it and use `on_run`
+        command = "sh -c \"source \\\"" + filePath + "\\\"; on_run;\"";
+    }
     if (useFBInk) {
         command = "/mnt/us/libkh/bin/fbink -k; " + command + " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r"; // Send output to fbink
     }
