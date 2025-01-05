@@ -93,7 +93,7 @@ LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
 
     std::string command = "sh \"" + filePath + '"';
     if (useFBInk) {
-        command = "/mnt/us/libkh/bin/fbink -k; " + command + " 2>&1 | /mnt/us/libkh/bin/fbink -y 5"; // Send output to fbink
+        command = "/mnt/us/libkh/bin/fbink -k; " + command + " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r"; // Send output to fbink
     }
 
     syslog(LOG_INFO, "Invoking app using \"%s\"", command.c_str());
