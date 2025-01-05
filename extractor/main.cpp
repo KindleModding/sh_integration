@@ -284,11 +284,14 @@ void remove_file(const char* path, const char* filename, char* uuid) {
     filePath += path;
     filePath += "/";
     filePath += filename;
+    std::string sdrScriptPath = filePath.string() + ".sdr/script.sh";
+
+    std::string icon_string;
     bool useHooks = false;
 
     // Read data from file header
     std::string line;
-    std::ifstream file(filePath);
+    std::ifstream file(sdrScriptPath);
     if (file.is_open()) {
         for (int i=0; i < 6; i++) {
             if (!std::getline(file, line)) {
@@ -305,9 +308,9 @@ void remove_file(const char* path, const char* filename, char* uuid) {
         syslog(LOG_INFO, "Unable to open file %s", filePath.string().c_str());
     }
 
-    // If the file is functional, run install hook
+    // If the file is uses hooks, run removal hook
     if (useHooks) {
-        std::string escapedScriptPath = filePath.string() + ".sdr/script.sh";
+        std::string escapedScriptPath = sdrScriptPath;
         for (int i=0; i < escapedScriptPath.length(); i++) {
             if (escapedScriptPath[i] == '"') { // Who thought this was a good idea???
                 escapedScriptPath.insert(i, "\\");
@@ -325,13 +328,9 @@ void remove_file(const char* path, const char* filename, char* uuid) {
         }
     }
 
-    if (useHooks) { // @TODO: Reserved for base64 icon implementation
-        // Delete the sdr folder
-        std::filesystem::remove_all(filePath.string() + ".sdr");
-    }
-
     // Actually remove the file (and the entry)
     std::filesystem::remove(filePath); // Juuuuust in case (shouldn't be needed, pretty sure this is handled externally)
+    std::filesystem::remove_all(filePath.string() + ".sdr");
     scanner_delete_ccat_entry(uuid);
 }
 
@@ -346,6 +345,8 @@ int extractor(const struct scanner_event* event) {
             remove_file(event->path, event->filename, event->uuid);
             break;
         case SCANNER_UPDATE:
+            index_file(event->path, event->filename);
+            remove_file(event->path, event->filename, event->uuid);
             break;
         default:
             // Don't run install hooks and such willy-nilly
