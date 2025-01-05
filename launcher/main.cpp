@@ -13,7 +13,6 @@
 
 #define SERVICE_NAME "com.notmarek.shell_integration.launcher"
 
-int childStatus;
 pid_t app_pid = -1;
 bool shouldExit = false;
 
@@ -133,7 +132,7 @@ int main(void) {
 
         if (app_pid > 0) { // This is the parent process AND we have spwned the child
             // Wait for child process to quit
-            waitpid(app_pid, &childStatus, 0);
+            waitpid(app_pid, NULL, 0);
 
             app_pid = -1; // So we know the program has quit
 

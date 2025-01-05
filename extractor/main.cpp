@@ -5,6 +5,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "cJSON.h"
 
 cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) {
@@ -42,7 +44,20 @@ cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) 
 
     // If the file is functional, run install hook
     if (isFunctional) {
-        system(("sh -c \"source \\\"" + filePath.string() + "\\\"\"; on_install;").c_str());
+        std::string escapedPath = filePath.string();
+        for (int i=0; i < escapedPath.length(); i++) {
+            if (escapedPath[i] == '"') {
+                escapedPath.insert(i, "\\");
+                i += 1; // Skip character
+            }
+        }
+
+        const int pid = fork();
+        if (pid == 0) {
+            execl("/bin/sh", "-c", ("source \"" + escapedPath + "\"; on_install;").c_str());
+        } else {
+            waitpid(pid, NULL, 0);
+        }
     }
 
     struct stat st;
@@ -214,8 +229,19 @@ void remove_file(char *path, char* filename, char* uuid) {
     }
 
     // If the file is functional, run install hook
-    if (isFunctional) {
-        system(("sh -c \"source \\\"" + filePath.string() + "\\\"\"; on_remove;").c_str());
+    std::string escapedPath = filePath.string();
+    for (int i=0; i < escapedPath.length(); i++) {
+        if (escapedPath[i] == '"') {
+            escapedPath.insert(i, "\\");
+            i += 1; // Skip character
+        }
+    }
+
+    const int pid = fork();
+    if (pid == 0) {
+        execl("/bin/sh", "-c", ("source \"" + escapedPath + "\"; on_remove;").c_str());
+    } else {
+        waitpid(pid, NULL, 0);
     }
 
     // Actually remove the file (and the entry)
