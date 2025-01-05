@@ -1,6 +1,7 @@
 #include "scanner.h"
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <sys/syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -104,31 +105,93 @@ void index_file(char *path, char* filename) {
         file.close(); // We are done reading the file
     }
 
-    if (useHooks) { // @TODO: This will also house the base64 image checker and extractor
+    if (icon_string.substr(0, 10) == "data:image" || useHooks) {
         // Create sdr folder
-        std::string sdr_path = full_path.string() + ".sdr";
+        const std::string sdr_path = full_path.string() + ".sdr";
         std::filesystem::create_directory(sdr_path);
 
-        // If the file is functional, run install hook
-        if (useHooks) {
-            std::string escapedPath = full_path.string();
-            for (int i=0; i < escapedPath.length(); i++) {
-                if (escapedPath[i] == '"') {
-                    escapedPath.insert(i, "\\");
-                    i += 1; // Skip character
+        if (icon_string.substr(0, 10) == "data:image") {
+            //data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAA
+            const int fileTypeIndex = icon_string.find('/') + 1;
+            const int b64StartIndex = icon_string.find(',') + 1;
+            int fileTypeEndIndex = icon_string.find(';');
+            if (fileTypeEndIndex == -1) {
+                fileTypeEndIndex = b64StartIndex - 1;
+            }
+
+            const std::string fileType = icon_string.substr(fileTypeIndex, fileTypeEndIndex - fileTypeIndex);
+            const std::string icon_sdr_path = full_path.string() + ".sdr/icon." + fileType;
+
+            // Parse the base64
+            std::ofstream file;
+            file.open(icon_sdr_path, std::ios::out | std::ios::binary);
+
+            char currentByte = 0;
+            int processedBits = 0;
+            for (int i=b64StartIndex; i < icon_string.length(); i++) {
+                // Convert the base64 character to binary
+                char value = 0;
+                if (icon_string[i] >= 'A' && icon_string[i] <= 'Z') {
+                    value = icon_string[i] - 'A';
+                } else if (icon_string[i] >= 'a' && icon_string[i] <= 'z') {
+                    value = (icon_string[i] - 'a') + 26;
+                } else if (icon_string[i] >= '0' && icon_string[i] <= '9') {
+                    value = (icon_string[i] - '0') + 52;
+                } else if (icon_string[i] == '+') {
+                    value = 62;
+                } else if (icon_string[i] == '/') {
+                    value = 63;
+                } else if (icon_string[i] != '=') {
+                    printf("Invalid B64 at position %i", i); // Warn
+                }
+
+                // Add data to the currentByte
+                currentByte |= (value << 2) >> processedBits;
+                int consumedBits = std::min(8 - processedBits, 6);
+                processedBits += consumedBits;
+
+                if (processedBits >= 8) {
+                    printf("Adding byte: %i\n", currentByte);
+                    file.put(currentByte);
+                    processedBits -= 8;
+
+                    if (icon_string[i] == '=') {
+                        break; // Terminate on padding
+                    }
+
+                    // Set new currentByte to leftover bits
+                    currentByte = 0;
+                    currentByte |= value << (2 + consumedBits);
+                    processedBits = 6 - consumedBits;
                 }
             }
+            file.close();
 
-            syslog(LOG_INFO, "Running install event");
-            const int pid = fork();
-            if (pid == 0) {
-                syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_install;").c_str());
-                execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedPath + "\"; on_install;").c_str(), NULL);
-            } else {
-                waitpid(pid, NULL, 0);
+            icon_string = icon_sdr_path;
+        }
+
+        if (useHooks) {
+            // If the file is functional, run install hook
+            if (useHooks) {
+                std::string escapedPath = full_path.string();
+                for (int i=0; i < escapedPath.length(); i++) {
+                    if (escapedPath[i] == '"') {
+                        escapedPath.insert(i, "\\");
+                        i += 1; // Skip character
+                    }
+                }
+
+                syslog(LOG_INFO, "Running install event");
+                const int pid = fork();
+                if (pid == 0) {
+                    syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_install;").c_str());
+                    execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedPath + "\"; on_install;").c_str(), NULL);
+                } else {
+                    waitpid(pid, NULL, 0);
+                }
+
+                std::filesystem::copy_file(full_path, sdr_path + "/script.sh"); // We copy the script to sdr folder in case we need 
             }
-
-            std::filesystem::copy_file(full_path, sdr_path + "/script.sh"); // We copy the script to sdr folder in case we need 
         }
     }
 
