@@ -56,7 +56,7 @@ cJSON* generateChangeRequest(std::filesystem::path& filePath, const char* uuid) 
         const int pid = fork();
         if (pid == 0) {
             syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_install;").c_str());
-            execl("/bin/sh", "-c", ("source \"" + escapedPath + "\"; on_install;").c_str());
+            execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedPath + "\"; on_install;").c_str(), NULL);
         } else {
             waitpid(pid, NULL, 0);
         }
@@ -244,7 +244,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
         const int pid = fork();
         if (pid == 0) {
             syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_remove;").c_str());
-            execl("/bin/sh", "-c", ("source \"" + escapedPath + "\"; on_remove;").c_str());
+            execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedPath + "\"; on_remove;").c_str(), NULL);
         } else {
             waitpid(pid, NULL, 0);
         }
@@ -270,6 +270,7 @@ int extractor(const struct scanner_event* event) {
         default:
             // Don't run install hooks and such willy-nilly
             //index_file(event->path, event->filename);
+            syslog(LOG_INFO, "Received unknown event: %i", event->event_type);
             break;
     }
 
