@@ -10,18 +10,6 @@ lipc_stub_dep = declare_dependency(
     include_directories: ['../openlipc/include/']
 )
 
-libxml2_stub = library(
-    'libxml2',
-    'libxml2/libxml2.cpp',
-    include_directories: ['libxml2/'],
-    name_prefix: ''
-)
-
-libxml2_stub_dep = declare_dependency(
-    link_with: libxml2_stub,
-    include_directories: ['libxml2/']
-)
-
 scanner_stub = library(
     'scanner',
     'scanner/scanner.cpp',
