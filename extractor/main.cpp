@@ -1,13 +1,10 @@
 #include "scanner.h"
 #include <filesystem>
 #include <fstream>
-#include <ios>
 #include <sys/syslog.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <string>
 #include <sys/wait.h>
-#include <unistd.h>
 #include "cJSON.h"
 
 cJSON* generateChangeRequest(const std::filesystem::path& filePath, const char* uuid, const std::string& name_string, const std::string& author_string, const std::string& icon_string) {
