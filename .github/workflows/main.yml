@@ -35,7 +35,6 @@ jobs:
     - name: build
       run: |
           sudo apt-get install meson
-          ./gen_crosscompile.sh
           meson setup --cross-file ~/x-tools/arm-kindlepw2-linux-gnueabi/meson-crosscompile.txt builddir_kindlepw2
           cd builddir_kindlepw2
           meson compile
@@ -73,7 +72,6 @@ jobs:
     - name: build
       run: |
           sudo apt-get install meson
-          ./gen_crosscompile.sh
           meson setup --cross-file ~/x-tools/arm-kindlehf-linux-gnueabihf/meson-crosscompile.txt builddir_kindlehf
           cd builddir_kindlehf
           meson compile
