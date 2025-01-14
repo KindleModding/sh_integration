@@ -12,8 +12,21 @@ jobs:
     steps:
     - name: Download toolchain
       run: wget -q https://github.com/KindleModding/koxtoolchain/releases/latest/download/kindlepw2.tar.gz -O - | tar -xzf - -C ~
-    - name: Export toolchain
-      run: echo ~/x-tools/arm-kindlepw2-linux-gnueabi/bin >> $GITHUB_PATH
+    
+    - uses: actions/checkout@v4
+      with:
+        repository: KindleModding/kindle-sdk
+        submodules: recursive
+        path: kindle-sdk
+    - name: Cache Kindle Firmware
+      id: cache-kindle-sdk-firmware
+      uses: actions/cache@v4
+      with:
+        path: kindle-sdk/cache
+        key: ${{ runner.os }}-cache-kindle-sdk-firmware
+    - name: "Setup kindle-sdk"
+      run: ./gen-sdk.sh kindlepw2
+
     - uses: actions/checkout@v4
       with:
         submodules: recursive
@@ -21,7 +34,7 @@ jobs:
       run: |
           sudo apt-get install meson
           ./gen_crosscompile.sh
-          meson setup --cross-file kindlepw2.txt builddir_kindlepw2
+          meson setup --cross-file ~/x-tools/arm-kindlepw2-linux-gnueabi/meson-crosscompile.txt builddir_kindlepw2
           cd builddir_kindlepw2
           meson compile
     - uses: actions/upload-artifact@v4
@@ -35,8 +48,21 @@ jobs:
     steps:
     - name: Download toolchain
       run: wget -q https://github.com/KindleModding/koxtoolchain/releases/latest/download/kindlehf.tar.gz -O - | tar -xzf - -C ~
-    - name: Export toolchain
-      run: echo ~/x-tools/arm-kindlehf-linux-gnueabihf/bin >> $GITHUB_PATH
+    
+    - uses: actions/checkout@v4
+      with:
+        repository: KindleModding/kindle-sdk
+        submodules: recursive
+        path: kindle-sdk
+    - name: Cache Kindle Firmware
+      id: cache-kindle-sdk-firmware
+      uses: actions/cache@v4
+      with:
+        path: kindle-sdk/cache
+        key: ${{ runner.os }}-cache-kindle-sdk-firmware
+    - name: "Setup kindle-sdk"
+      run: ./gen-sdk.sh kindlehf
+
     - uses: actions/checkout@v4
       with:
         submodules: recursive
@@ -44,7 +70,7 @@ jobs:
       run: |
           sudo apt-get install meson
           ./gen_crosscompile.sh
-          meson setup --cross-file kindlehf.txt builddir_kindlehf
+          meson setup --cross-file ~/x-tools/arm-kindlehf-linux-gnueabihf/meson-crosscompile.txt builddir_kindlehf
           cd builddir_kindlehf
           meson compile
     - uses: actions/upload-artifact@v4
