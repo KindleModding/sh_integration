@@ -25,7 +25,9 @@ jobs:
         path: kindle-sdk/cache
         key: ${{ runner.os }}-cache-kindle-sdk-firmware
     - name: "Setup kindle-sdk"
-      run: sh ./kindle-sdk/gen-sdk.sh kindlepw2
+      run: |
+          sudo apt-get install -y zlib1g-dev libarchive-dev nettle-dev curl
+          sh ./kindle-sdk/gen-sdk.sh kindlepw2
 
     - uses: actions/checkout@v4
       with:
@@ -61,7 +63,9 @@ jobs:
         path: kindle-sdk/cache
         key: ${{ runner.os }}-cache-kindle-sdk-firmware
     - name: "Setup kindle-sdk"
-      run: sh ./kindle-sdk/gen-sdk.sh kindlehf
+      run: |
+          sudo apt-get install -y zlib1g-dev libarchive-dev nettle-dev curl
+          sh ./kindle-sdk/gen-sdk.sh kindlehf
 
     - uses: actions/checkout@v4
       with:
