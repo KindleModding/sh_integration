@@ -25,7 +25,7 @@ jobs:
         path: kindle-sdk/cache
         key: ${{ runner.os }}-cache-kindle-sdk-firmware
     - name: "Setup kindle-sdk"
-      run: ./gen-sdk.sh kindlepw2
+      run: sh ./kindle-sdk/gen-sdk.sh kindlepw2
 
     - uses: actions/checkout@v4
       with:
@@ -61,7 +61,7 @@ jobs:
         path: kindle-sdk/cache
         key: ${{ runner.os }}-cache-kindle-sdk-firmware
     - name: "Setup kindle-sdk"
-      run: ./gen-sdk.sh kindlehf
+      run: sh ./kindle-sdk/gen-sdk.sh kindlehf
 
     - uses: actions/checkout@v4
       with:
