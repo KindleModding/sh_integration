@@ -1,4 +1,4 @@
-#include "openlipc.h"
+#include "lipc.h"
 #include <cerrno>
 #include <csignal>
 #include <cstddef>

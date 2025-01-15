@@ -1,15 +1,3 @@
-lipc_stub = library(
-    'lipc',
-    'lipc/lipc.cpp',
-    include_directories: ['../openlipc/include/'],
-    name_prefix: 'lib'
-)
-
-lipc_stub_dep = declare_dependency(
-    link_with: lipc_stub,
-    include_directories: ['../openlipc/include/']
-)
-
 scanner_stub = library(
     'scanner',
     'scanner/scanner.cpp',
