@@ -30,8 +30,7 @@ jobs:
       run: |
           sudo apt-get install meson
           meson setup --cross-file ~/x-tools/arm-kindlepw2-linux-gnueabi/meson-crosscompile.txt builddir_kindlepw2
-          cd builddir_kindlepw2
-          meson compile
+          meson compile -C builddir_kindlepw2
     - uses: actions/upload-artifact@v4
       with:
         name: sh_integration-kindlepw2
@@ -61,8 +60,7 @@ jobs:
       run: |
           sudo apt-get install meson
           meson setup --cross-file ~/x-tools/arm-kindlehf-linux-gnueabihf/meson-crosscompile.txt builddir_kindlehf
-          cd builddir_kindlehf
-          meson compile
+          meson compile -C builddir_kindlehf
     - uses: actions/upload-artifact@v4
       with:
         name: sh_integration-kindlehf
