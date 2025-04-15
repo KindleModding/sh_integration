@@ -108,7 +108,7 @@ void index_file(char *path, char* filename) {
         file.close(); // We are done reading the file
     }
 
-    if (icon_string.substr(0, 10) == "data:image" || useHooks || cron_string) {
+    if (icon_string.substr(0, 10) == "data:image" || useHooks || cron_string != nullptr) {
         // Create sdr folder
         const std::string sdr_path = full_path.string() + ".sdr";
         std::filesystem::create_directory(sdr_path);
@@ -172,7 +172,7 @@ void index_file(char *path, char* filename) {
             icon_string = icon_sdr_path;
         }
 
-        if (cron_string) {
+        if (cron_string != nullptr) {
             std::ofstream flag(sdr_path + "/.cron_job");
             flag << "# This file acts as a flag to let use remove the cron job when the scriptlet is delete";
             flag.close();
