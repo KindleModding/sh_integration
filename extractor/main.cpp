@@ -78,6 +78,7 @@ void index_file(char *path, char* filename) {
     std::string name_string;
     std::string author_string;
     std::string icon_string;
+    std::string cron_string;
 
     std::string line;
 
@@ -100,16 +101,18 @@ void index_file(char *path, char* filename) {
                 icon_string = line.substr(8);
             } else if (line.substr(0, 10) == "# UseHooks") {
                 useHooks = true;
+            } else if (line.substr(0, 8) == "# Cron: ") {
+                cron_string = line.substr(8);
             }
         }
         file.close(); // We are done reading the file
     }
 
-    if (icon_string.substr(0, 10) == "data:image" || useHooks) {
+    if (icon_string.substr(0, 10) == "data:image" || useHooks || cron_string) {
         // Create sdr folder
         const std::string sdr_path = full_path.string() + ".sdr";
         std::filesystem::create_directory(sdr_path);
-
+        
         if (icon_string.substr(0, 10) == "data:image") {
             //data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAA
             const int fileTypeIndex = icon_string.find('/') + 1;
@@ -169,9 +172,17 @@ void index_file(char *path, char* filename) {
             icon_string = icon_sdr_path;
         }
 
+        if (cron_string) {
+            std::ofstream flag(sdr_path + "/.cron_job");
+            flag << "# This file acts as a flag to let use remove the cron job when the scriptlet is delete";
+            flag.close();
+            // todo!: escalate to root and update the crontab -- we get the schedule expression from cron_string and the script path should be path/filename -- crontabs run as root no need for mkk/su????
+            // todo: somehow handle cron being removed while file still exists (eg ota)?
+        }
+
+
         if (useHooks) {
             // If the file is functional, run install hook
-            if (useHooks) {
                 std::string escapedPath = full_path.string();
                 for (int i=0; i < escapedPath.length(); i++) {
                     if (escapedPath[i] == '"') {
@@ -190,7 +201,6 @@ void index_file(char *path, char* filename) {
                 }
 
                 std::filesystem::copy_file(full_path, sdr_path + "/script.sh"); // We copy the script to sdr folder in case we need 
-            }
         }
     }
 
