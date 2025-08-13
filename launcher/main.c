@@ -134,13 +134,13 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         strcat(command, " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
     }
 
-    syslog(LOG_INFO, "Invoking app using \"%s\"", command.c_str());
+    syslog(LOG_INFO, "Invoking app using \"%s\"", command);
     // Run the app on a background thread
     app_pid = fork();
     syslog(LOG_INFO, "Our app PID \"%d\"", app_pid);
     if (app_pid == 0) {
         // we are running as framework call gandalf for help
-        execl("/var/local/mkk/su", "su", "-c", command.c_str(), NULL); // su is first arg bc it expects to be run from a shell ($1 = name of command, duh)
+        execl("/var/local/mkk/su", "su", "-c", command, NULL); // su is first arg bc it expects to be run from a shell ($1 = name of command, duh)
     }
 
     return stub(lipc, property, value, data);
