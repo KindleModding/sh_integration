@@ -25,7 +25,8 @@ LIPCcode stub(LIPC* lipc, const char* property, void* value, void* data) {
     syslog(LOG_INFO, "Replying with %s", response);
 
     char* target = malloc(strlen(property) + strlen("result") + 1); // +1 bc null termination ofc
-    strcpy(target, property);
+    target[0] = '\0';
+    strcat(target, property);
     strcat(target, "result");
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", target, response);
 
@@ -110,30 +111,27 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
 
     int commandLength = strlen("sh \"") + escapedPathLength + strlen("\"");
     char* command = malloc(commandLength);
-    strcpy(command, "sh \"");
-    command[strlen("sh \"")] = '\0';
+    command[0] = '\0';
+    strcat(command, "sh \"");
     strcat(command, escapedPath);
-    command[strlen("sh \"") + escapedPathLength] = '\0';
     strcat(command, "\"");
 
     if (useHooks) { // useHooks script - source it and use `on_run`
         commandLength = strlen("sh -c \"source \\\"") + escapedPathLength + strlen("\\\"; on_run;\"");
         free(command);
         command = malloc(commandLength);
-        strcpy(command, "sh -c \"source \\\"");
-        command[strlen("sh -c \"source \\\"")] = '\0';
+        command[0] = '\0';
+        strcat(command, "sh -c \"source \\\"");
         strcat(command, escapedPath);
-        command[strlen("sh -c \"source \\\"") + escapedPathLength] = '\0';
         strcat(command, "\\\"; on_run;\"");
     }
     if (useFBInk) {
         commandLength = strlen("/mnt/us/libkh/bin/fbink -k; ") + escapedPathLength + strlen(" 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
         free(command);
         command = malloc(commandLength);
-        strcpy(command, "/mnt/us/libkh/bin/fbink -k; ");
-        command[strlen("/mnt/us/libkh/bin/fbink -k; ")] = '\0';
+        command[0] = '\0';
+        strcat(command, "/mnt/us/libkh/bin/fbink -k; ");
         strcat(command, escapedPath);
-        command[strlen("/mnt/us/libkh/bin/fbink -k; ") + escapedPathLength] = '\0';
         strcat(command, " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
     }
 
