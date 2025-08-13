@@ -117,8 +117,8 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     strcat(command, "\"");
 
     if (useHooks) { // useHooks script - source it and use `on_run`
-        commandLength = strlen("sh -c \"source \\\"") + escapedPathLength + strlen("\\\"; on_run;\"");
         free(command);
+        commandLength = strlen("sh -c \"source \\\"") + escapedPathLength + strlen("\\\"; on_run;\"");
         command = malloc(commandLength);
         command[0] = '\0';
         strcat(command, "sh -c \"source \\\"");
@@ -126,13 +126,15 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         strcat(command, "\\\"; on_run;\"");
     }
     if (useFBInk) {
-        commandLength = strlen("/mnt/us/libkh/bin/fbink -k; ") + escapedPathLength + strlen(" 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
+        char* old_command = strdup(command);
         free(command);
+        commandLength = strlen("/mnt/us/libkh/bin/fbink -k; ") + strlen(old_command) + strlen(" 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
         command = malloc(commandLength);
         command[0] = '\0';
         strcat(command, "/mnt/us/libkh/bin/fbink -k; ");
-        strcat(command, escapedPath);
+        strcat(command, old_command);
         strcat(command, " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
+        free(old_command);
     }
 
     syslog(LOG_INFO, "Invoking app using \"%s\"", command);
