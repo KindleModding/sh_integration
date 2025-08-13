@@ -1,15 +1,11 @@
 #include "lipc.h"
-#include <cerrno>
-#include <csignal>
-#include <cstddef>
-#include <cstdio>
-#include <cstring>
-#include <fstream>
+#include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/syslog.h>
 #include <sys/wait.h>
-#include <unistd.h>
-#include <string>
+#include <stdbool.h>
+#include <stdlib.h>
 
 #define SERVICE_NAME "com.notmarek.shell_integration.launcher"
 
@@ -17,16 +13,23 @@ pid_t app_pid = -1;
 bool shouldExit = false;
 
 LIPCcode stub(LIPC* lipc, const char* property, void* value, void* data) {
-    syslog(LOG_INFO, "Stub called for \"%s\" with value \"%s\"", property, static_cast<char*>(value));
-    std::string uri(static_cast<char*>(value));
+    syslog(LOG_INFO, "Stub called for \"%s\" with value \"%s\"", property, (char*) value);
+    
+    const int segment_length = (strchr(value, ':') - (char*) value);
+    const int response_size = segment_length + strlen(":0:") + 1;
+    char* response = malloc(response_size); // +1 ftw
+    memset(response, 0, response_size);
+    strncpy(response, value, segment_length);
+    strcat(response, ":0:");
+    syslog(LOG_INFO, "Replying with %s", response);
 
-    const int idLoc = uri.find(':');
-    std::string response = uri.substr(0, idLoc) + ":0:";
-    syslog(LOG_INFO, "Replying with %s", response.c_str());
+    char* target = malloc(strlen(property) + strlen("result") + 1); // +1 bc null termination ofc
+    strcpy(target, property);
+    strcat(target, "result");
+    LipcSetStringProperty(lipc, "com.lab126.appmgrd", target, response);
 
-    std::string target = property;
-    target += "result";
-    LipcSetStringProperty(lipc, "com.lab126.appmgrd", target.c_str(), response.c_str());
+    free(target);
+    free(response);
 
     return LIPC_OK;
 }
@@ -40,9 +43,10 @@ LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
     
     // Kill the app if it's running
     if (app_pid > 0) {
-        const std::string command = ("/var/local/mkk/su -c \"kill -9 " + std::to_string(app_pid) + "\"");
-        syslog(LOG_INFO, "Killing with: %s", command.c_str());
-        system(command.c_str());
+        char command[48];
+        sprintf(command, "/var/local/mkk/su -c \"kill -9 %i\"", app_pid);
+        syslog(LOG_INFO, "Killing with: %s", command);
+        system(command);
     }
     
     const LIPCcode result = stub(lipc, property, value, data);
