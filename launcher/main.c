@@ -1,4 +1,5 @@
 #include "lipc.h"
+#include "unistd.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -34,11 +35,11 @@ LIPCcode stub(LIPC* lipc, const char* property, void* value, void* data) {
     return LIPC_OK;
 }
 
-LIPCcode pause(LIPC* lipc, const char* property, void* value, void* data) {
+LIPCcode pause_callback(LIPC* lipc, const char* property, void* value, void* data) {
     return stub(lipc, property,value, data);
 }
 
-LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
+LIPCcode unload_callback(LIPC* lipc, const char* property, void* value, void* data) {
     syslog(LOG_INFO, "Unloading shell integration launcher");
     
     // Kill the app if it's running
@@ -55,62 +56,82 @@ LIPCcode unload(LIPC* lipc, const char* property, void* value, void* data) {
     return result;
 }
 
-LIPCcode go(LIPC* lipc, const char* property, void* value, void* data) {
-    const std::string uri(static_cast<char*>(value));
-    std::string rawFilePath = uri.substr(uri.find(':') + 6 + strlen(SERVICE_NAME) + 1);
-    const int queryIndex = rawFilePath.find('?');
-    if (queryIndex != -1) {
-        rawFilePath = rawFilePath.substr(0, queryIndex);
+LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) {
+    char* rawFilePath = strchr(value, ':') + 6 + strlen(SERVICE_NAME) + 1;
+    char* query = strchr(rawFilePath, '?');
+    if (query != NULL) {
+        query[0] = 0;
     }
 
-    std::string filePath;
-
-    syslog(LOG_INFO, "Raw path: \"%s\"", rawFilePath.c_str());
+    syslog(LOG_INFO, "Raw path: \"%s\"", rawFilePath);
 
     // Parse the filePath as it is urlencoded
-    for (size_t i=0; i < rawFilePath.length(); i++) {
+    char* filePath = malloc(strlen(rawFilePath)); // URLEncoded string will NEVER be longer decoded
+    memset(filePath, 0, strlen(rawFilePath));
+    int currentFilepathLen = 0;
+
+    for (size_t i=0; i < strlen(rawFilePath); i++) {
         if (rawFilePath[i] == '%') {
-            filePath += (char)((rawFilePath[i+1] - '0') * 16 + (rawFilePath[i+2] - '0'));
+            filePath[currentFilepathLen++] = (char)(((rawFilePath[i+1] - '0') << 4) + (rawFilePath[i+2] - '0'));
             i += 2;
         } else {
-            filePath += rawFilePath[i];
+            filePath[currentFilepathLen++] = rawFilePath[i];
         }
     }
+
 
     bool useFBInk = true;
     bool useHooks = false;
-    std::string line;
-    std::ifstream file(filePath);
-    if (file.is_open()) {
+    FILE* file = fopen(filePath, "r");
+    if (file) {
+        char buffer[32];
         for (int i=0; i < 6; i++) {
-            if (!std::getline(file, line)) {
-                break;
-            }
+            fgets(buffer, 32, file);
 
             // Start reading the header
-            if (line.substr(0, 14) == "# DontUseFBInk") {
+            if (strcmp(buffer, "# DontUseFBInk\n") == 0) {
                 useFBInk = false;
-            } else if (line.substr(0, 10) == "# UseHooks") {
+            } else if (strcmp(buffer, "# UseHooks\n") == 0) {
                 useHooks = true;
             }
         }
-        file.close(); // We are done reading the file
+        fclose(file);
     }
 
-    std::string escapedPath = filePath;
-    for (int i=0; i < escapedPath.length(); i++) {
-        if (escapedPath[i] == '"') {
-            escapedPath.insert(i, "\\");
-            i += 1; // Skip character
+    char* escapedPath = malloc(strlen(filePath) * 2);
+    memset(escapedPath, 0, strlen(filePath) * 2);
+    int escapedPathLength = 0;
+    for (int i=0; i < strlen(filePath); i++) {
+        if (filePath[i] == '"') {
+            escapedPath[escapedPathLength++] = '\\';
         }
+        escapedPath[escapedPathLength++] = filePath[i];
     }
 
-    std::string command = "sh \"" + escapedPath + '"';
+    int commandLength = strlen("sh \"") + escapedPathLength + strlen("\"");
+    char* command = malloc(commandLength);
+    memset(command, 0, commandLength);
+    strcat(command, "sh \"");
+    strcat(command, escapedPath);
+    strcat(command, "\"");
+
     if (useHooks) { // useHooks script - source it and use `on_run`
-        command = "sh -c \"source \\\"" + escapedPath + "\\\"; on_run;\"";
+        commandLength = strlen("sh -c \"source \\\"") + escapedPathLength + strlen("\\\"; on_run;\"");
+        free(command);
+        command = malloc(commandLength);
+        memset(command, 0, commandLength);
+        strcat(command, "sh -c \"source \\\"");
+        strcat(command, escapedPath);
+        strcat(command, "\\\"; on_run;\"");
     }
     if (useFBInk) {
-        command = "/mnt/us/libkh/bin/fbink -k; " + command + " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r"; // Send output to fbink
+        commandLength = strlen("/mnt/us/libkh/bin/fbink -k; ") + escapedPathLength + strlen(" 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
+        free(command);
+        command = malloc(commandLength);
+        memset(command, 0, commandLength);
+        strcat(command, "/mnt/us/libkh/bin/fbink -k; ");
+        strcat(command, escapedPath);
+        strcat(command, " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
     }
 
     syslog(LOG_INFO, "Invoking app using \"%s\"", command.c_str());
@@ -134,9 +155,9 @@ int main(void) {
         return 1;
 
     LipcRegisterStringProperty(lipc, "load", NULL, stub, NULL);
-    LipcRegisterStringProperty(lipc, "unload", NULL, unload, NULL);
-    LipcRegisterStringProperty(lipc, "pause", NULL, pause, NULL);
-    LipcRegisterStringProperty(lipc, "go", NULL, go, NULL);
+    LipcRegisterStringProperty(lipc, "unload", NULL, unload_callback, NULL);
+    LipcRegisterStringProperty(lipc, "pause", NULL, pause_callback, NULL);
+    LipcRegisterStringProperty(lipc, "go", NULL, go_callback, NULL);
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", "runresult",  "0:" SERVICE_NAME);
 
     while (!shouldExit) {
