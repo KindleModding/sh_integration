@@ -18,13 +18,13 @@ LIPCcode stub(LIPC* lipc, const char* property, void* value, void* data) {
     
     const int segment_length = (strchr(value, ':') - (char*) value);
     const int response_size = segment_length + strlen(":0:") + 1;
-    char* response = malloc(response_size); // +1 ftw
+    char* response = malloc(response_size + 1);
     strncpy(response, value, segment_length);
     response[segment_length] = '\0';
     strcat(response, ":0:");
     syslog(LOG_INFO, "Replying with %s", response);
 
-    char* target = malloc(strlen(property) + strlen("result") + 1); // +1 bc null termination ofc
+    char* target = malloc(strlen(property) + strlen("result") + 1);
     target[0] = '\0';
     strcat(target, property);
     strcat(target, "result");
@@ -67,7 +67,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     syslog(LOG_INFO, "Raw path: \"%s\"", rawFilePath);
 
     // Parse the filePath as it is urlencoded
-    char* filePath = malloc(strlen(rawFilePath)); // URLEncoded string will NEVER be longer decoded
+    char* filePath = malloc(strlen(rawFilePath) + 1); // URLEncoded string will NEVER be longer decoded
     int currentFilepathLen = 0;
 
     for (size_t i=0; i < strlen(rawFilePath); i++) {
@@ -99,7 +99,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         fclose(file);
     }
 
-    char* escapedPath = malloc(strlen(filePath) * 2);
+    char* escapedPath = malloc((strlen(filePath) * 2) + 1);
     int escapedPathLength = 0;
     for (int i=0; i < strlen(filePath); i++) {
         if (filePath[i] == '"') {
@@ -110,7 +110,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     escapedPath[escapedPathLength] = '\0';
 
     int commandLength = strlen("sh \"") + escapedPathLength + strlen("\"");
-    char* command = malloc(commandLength);
+    char* command = malloc(commandLength + 1);
     command[0] = '\0';
     strcat(command, "sh \"");
     strcat(command, escapedPath);
@@ -119,7 +119,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     if (useHooks) { // useHooks script - source it and use `on_run`
         free(command);
         commandLength = strlen("sh -c \"source \\\"") + escapedPathLength + strlen("\\\"; on_run;\"");
-        command = malloc(commandLength);
+        command = malloc(commandLength + 1);
         command[0] = '\0';
         strcat(command, "sh -c \"source \\\"");
         strcat(command, escapedPath);
@@ -129,7 +129,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         char* old_command = strdup(command);
         free(command);
         commandLength = strlen("/mnt/us/libkh/bin/fbink -k; ") + strlen(old_command) + strlen(" 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
-        command = malloc(commandLength);
+        command = malloc(commandLength + 1);
         command[0] = '\0';
         strcat(command, "/mnt/us/libkh/bin/fbink -k; ");
         strcat(command, old_command);
