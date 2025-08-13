@@ -1,27 +1,26 @@
 #include "scanner.h"
-#include <filesystem>
-#include <fstream>
-#include <ios>
+#include <cstring>
+#include <string.h>
 #include <sys/syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <string>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <libgen.h>
 #include "cJSON.h"
 
-cJSON* generateChangeRequest(const std::filesystem::path& filePath, const char* uuid, const std::string& name_string, const std::string& author_string, const std::string& icon_string) {
-    syslog(LOG_INFO, "Generating change request for %s\n", filePath.c_str());
+cJSON* generateChangeRequest(char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string) {
+    syslog(LOG_INFO, "Generating change request for %s\n", filePath);
 
     struct stat st;
-    stat(filePath.c_str(), &st);
+    stat(filePath, &st);
 
     cJSON* json = cJSON_CreateObject();
     cJSON_AddItemToObject(json, "uuid", cJSON_CreateString(uuid));
-    cJSON_AddItemToObject(json, "location", cJSON_CreateString(filePath.c_str()));
+    cJSON_AddItemToObject(json, "location", cJSON_CreateString(filePath));
     cJSON_AddItemToObject(json, "type", cJSON_CreateString("Entry:Item"));
     cJSON_AddItemToObject(json, "cdeType", cJSON_CreateString("PDOC"));
-    cJSON_AddItemToObject(json, "cdeKey", cJSON_CreateString(getSha1Hash(filePath.c_str())));
+    cJSON_AddItemToObject(json, "cdeKey", cJSON_CreateString(getSha1Hash(filePath)));
     cJSON_AddItemToObject(json, "modificationTime", cJSON_CreateNumber(st.st_mtim.tv_sec));
     cJSON_AddItemToObject(json, "diskUsage", cJSON_CreateNumber(st.st_size));
     cJSON_AddItemToObject(json, "isVisibleInHome", cJSON_CreateTrue());
@@ -31,7 +30,7 @@ cJSON* generateChangeRequest(const std::filesystem::path& filePath, const char* 
     cJSON *author = cJSON_CreateObject();
     cJSON_AddItemToObject(author, "kind", cJSON_CreateString("Author"));
     cJSON *author_name = cJSON_CreateObject();
-    cJSON_AddItemToObject(author_name, "display", cJSON_CreateString((const char *)(author_string.length() > 0 ? author_string.c_str() : "Unknown")));
+    cJSON_AddItemToObject(author_name, "display", cJSON_CreateString((const char *)(author_string != NULL ? author_string : "Unknown")));
     cJSON_AddItemToObject(author, "name", author_name);
     cJSON_AddItemToArray(authors, author);
     cJSON_AddItemToObject(json, "credits", authors);
@@ -46,15 +45,15 @@ cJSON* generateChangeRequest(const std::filesystem::path& filePath, const char* 
     cJSON_AddItemToObject(json, "displayObjects", refs);
     const char *tags[] = {"NEW"};
     cJSON_AddItemToObject(json, "displayTags", cJSON_CreateStringArray(tags, 1));
-    if (icon_string.length() > 0) {
+    if (icon_string != NULL) {
         cJSON_AddItemToObject(json, "thumbnail",
-                            cJSON_CreateString(icon_string.c_str()));
+                            cJSON_CreateString(icon_string));
     }
     cJSON *titles = cJSON_CreateArray();
     cJSON *title = cJSON_CreateObject();
     cJSON_AddItemToObject(
         title, "display",
-        cJSON_CreateString((const char *)(name_string.length() > 0 ? name_string.c_str() : filePath.filename().c_str())));
+        cJSON_CreateString((const char *)(name_string != NULL ? name_string : basename(filePath))));
     cJSON_AddItemToArray(titles, title);
     cJSON_AddItemToObject(json, "titles", titles);
 
