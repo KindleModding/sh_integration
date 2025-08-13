@@ -1,5 +1,8 @@
 #include "scanner.h"
 #include <cstring>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/syslog.h>
 #include <sys/types.h>
@@ -60,31 +63,32 @@ cJSON* generateChangeRequest(char* filePath, char* uuid, char* name_string, char
     return json;
 }
 
-typedef cJSON* (ChangeRequestGenerator)(const char*& file_path, const char*& uuid);
+typedef cJSON* (ChangeRequestGenerator)(const char* file_path, const char* uuid);
 void index_file(char *path, char* filename) {
     syslog(LOG_INFO, "Indexing file: %s/%s", path, filename);
 
-    std::filesystem::path full_path;
-    full_path += path;
-    full_path += "/";
-    full_path += filename;
+    char* full_path = malloc(strlen(path) + 1 + strlen(filename));
+    full_path[0] = '\0';
+    strcat(full_path, path);
+    strcat(full_path, "/");
+    strcat(full_path, filename);
 
     // Generate UUID
     char uuid[37] = {0};
     scanner_gen_uuid(uuid, 37);
 
     // Parse file data
-    std::string name_string;
-    std::string author_string;
-    std::string icon_string;
+    char* name_string = NULL;
+    char* author_string = NULL;
+    char* icon_string = NULL;
 
-    std::string line;
+    char* line = malloc(1024);
 
     bool useHooks = false;
 
     // Read data from file header
-    std::ifstream file(full_path);
-    if (file.is_open()) {
+    FILE* file = fopen(full_path, "r");
+    if (file) {
         for (int i=0; i < 6; i++) {
             if (!std::getline(file, line)) {
                 break;
@@ -101,7 +105,7 @@ void index_file(char *path, char* filename) {
                 useHooks = true;
             }
         }
-        file.close(); // We are done reading the file
+        fclose(file); // We are done reading the file
     }
 
     if (icon_string.substr(0, 10) == "data:image" || useHooks) {
