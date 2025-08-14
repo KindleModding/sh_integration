@@ -10,7 +10,9 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <limits.h>
-#include "cJSON.h"
+#include "cjson/cJSON.h"
+
+#include "utils.h"
 
 #define __USE_XOPEN_EXTENDED
 #include <ftw.h>
@@ -66,75 +68,38 @@ cJSON* generateChangeRequest(char* filePath, char* uuid, char* name_string, char
     return json;
 }
 
+char* buildCommand(char* command, char* sub)
+{
+    char* builtCommand = malloc(strlen(command) + strlen(sub) + 1);
+    sprintf(builtCommand, command, sub);
+    return builtCommand;
+}
+
 typedef cJSON* (ChangeRequestGenerator)(const char* file_path, const char* uuid);
 void index_file(char *path, char* filename) {
     syslog(LOG_INFO, "Indexing file: %s/%s", path, filename);
 
     char* full_path = malloc(strlen(path) + 1 + strlen(filename) + 1);
-    full_path[0] = '\0';
-    strcat(full_path, path);
-    strcat(full_path, "/");
-    strcat(full_path, filename);
+    sprintf(full_path, "%s/%s", path, filename);
 
     // Generate UUID
     char uuid[37] = {0};
     scanner_gen_uuid(uuid, 37);
 
-    // Parse file data
-    char* name_string = NULL;
-    char* author_string = NULL;
-    char* icon_string = NULL;
-
     bool useHooks = false;
 
     // Read data from file header
     FILE* file = fopen(full_path, "r");
-    if (file) {
-        for (int i=0; i < 6; i++) {
-            int bufferSize = 1024;
-            char* buffer = malloc(bufferSize);
-            buffer[0] = '\0';
-            int lineLength = 0;
-            while (true)
-            {
-                char character = fgetc(file);
-                if (character == '\n' || character == '\r')
-                {
-                    break;
-                }
-
-                if (lineLength + 2 >= bufferSize)
-                {
-                    buffer = realloc(buffer, bufferSize+=1024);
-                }
-
-                buffer[lineLength++] = character;
-                buffer[lineLength+1] = '\0';
-            }
-
-            // Start reading the header
-            if (strncmp(buffer, "# Name: ", strlen("# Name: ")))
-            {
-                name_string = strdup(buffer + strlen("# Name: "));
-            }
-            else if (strncmp(buffer, "# Author: ", strlen("# Author: ")))
-            {
-                author_string = strdup(buffer + strlen("# Author: "));
-            }
-            else if (strncmp(buffer, "# Icon: ", strlen("# Icon: ")))
-            {
-                icon_string = strdup(buffer + strlen("# Icon: "));
-            }
-            else if (strncmp(buffer, "# UseHooks", strlen("# UseHooks")))
-            {
-                useHooks = true;
-            }
-            free(buffer);
-        }
-        fclose(file); // We are done reading the file
+    if (!file) {
+        free(full_path);
+        return;
     }
 
-    bool validIcon = icon_string != NULL && strncmp(icon_string, "data:image", strlen("data:image"));
+    struct ScriptHeader header;
+    readScriptHeader(file, &header);
+    fclose(file);
+
+    bool validIcon = header.icon != NULL && strncmp(header.icon, "data:image", strlen("data:image"));
     if (validIcon || useHooks) {
         // Create sdr folder
         char* sdr_path = strdup(full_path);
@@ -143,9 +108,9 @@ void index_file(char *path, char* filename) {
 
         if (validIcon) {
             //data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAA
-            char* fileTypePointer = strchr(icon_string, '/')+1;
-            char* fileTypeEndPointer = strchr(icon_string, ';')-1;
-            char* b64Pointer = strchr(icon_string, ',')+1;
+            char* fileTypePointer = strchr(header.icon, '/')+1;
+            char* fileTypeEndPointer = strchr(header.icon, ';')-1;
+            char* b64Pointer = strchr(header.icon, ',')+1;
             if (fileTypeEndPointer == NULL)
             {
                 fileTypeEndPointer = b64Pointer-1;
@@ -166,20 +131,20 @@ void index_file(char *path, char* filename) {
 
             char currentByte = 0;
             int processedBits = 0;
-            for (int i=0; i < (strlen(icon_string) - strlen(b64Pointer)); i++) {
+            for (int i=0; i < (strlen(header.icon) - strlen(b64Pointer)); i++) {
                 // Convert the base64 character to binary
                 char value = 0;
-                if (icon_string[i] >= 'A' && icon_string[i] <= 'Z') {
-                    value = icon_string[i] - 'A';
-                } else if (icon_string[i] >= 'a' && icon_string[i] <= 'z') {
-                    value = (icon_string[i] - 'a') + 26;
-                } else if (icon_string[i] >= '0' && icon_string[i] <= '9') {
-                    value = (icon_string[i] - '0') + 52;
-                } else if (icon_string[i] == '+') {
+                if (header.icon[i] >= 'A' && header.icon[i] <= 'Z') {
+                    value = header.icon[i] - 'A';
+                } else if (header.icon[i] >= 'a' && header.icon[i] <= 'z') {
+                    value = (header.icon[i] - 'a') + 26;
+                } else if (header.icon[i] >= '0' && header.icon[i] <= '9') {
+                    value = (header.icon[i] - '0') + 52;
+                } else if (header.icon[i] == '+') {
                     value = 62;
-                } else if (icon_string[i] == '/') {
+                } else if (header.icon[i] == '/') {
                     value = 63;
-                } else if (icon_string[i] != '=') {
+                } else if (header.icon[i] != '=') {
                     syslog(LOG_WARNING, "Invalid B64 at position %i", i); // Warn
                 }
 
@@ -192,7 +157,7 @@ void index_file(char *path, char* filename) {
                     putc(currentByte, file);
                     processedBits -= 8;
 
-                    if (icon_string[i] == '=') {
+                    if (header.icon[i] == '=') {
                         break; // Terminate on padding
                     }
 
@@ -204,7 +169,9 @@ void index_file(char *path, char* filename) {
             }
             fclose(file);
 
-            icon_string = icon_sdr_path;
+            free(header.icon); // Shennanigans
+            header.icon = icon_sdr_path;
+            free(sdr_path);
         }
 
         if (useHooks) {
@@ -271,12 +238,13 @@ void index_file(char *path, char* filename) {
         return;
     }
 
-    cJSON* change = generateChangeRequest(full_path, uuid, name_string, author_string, icon_string);
+    cJSON* change = generateChangeRequest(full_path, uuid, header.name, header.author, header.icon);
     if (!change) {
         syslog(LOG_CRIT, "Failed to generate a change request...");
         cJSON_Delete(json);
         cJSON_Delete(array);
         cJSON_Delete(what);
+        freeScriptHeader(&header);
         return;
     }
 
@@ -286,6 +254,7 @@ void index_file(char *path, char* filename) {
         cJSON_Delete(json);
         cJSON_Delete(array);
         cJSON_Delete(what);
+        freeScriptHeader(&header);
         cJSON_Delete(change);
         return;
     }
@@ -298,6 +267,7 @@ void index_file(char *path, char* filename) {
         cJSON_Delete(json);
         cJSON_Delete(array);
         cJSON_Delete(what);
+        freeScriptHeader(&header);
         cJSON_Delete(change);
         cJSON_Delete(location_filter);
         return;
@@ -310,6 +280,7 @@ void index_file(char *path, char* filename) {
         cJSON_Delete(json);
         cJSON_Delete(array);
         cJSON_Delete(what);
+        freeScriptHeader(&header);
         cJSON_Delete(change);
         cJSON_Delete(location_filter);
         cJSON_Delete(Equals);
@@ -327,6 +298,7 @@ void index_file(char *path, char* filename) {
     syslog(LOG_INFO, "ccat error: %d.", result);
 
     cJSON_Delete(json);
+    freeScriptHeader(&header);
 }
 
 int remove_callback(const char* pathname, const struct stat* statBuffer, int objInfo, struct FTW* ftw)
@@ -342,49 +314,24 @@ void remove_file(const char* path, const char* filename, char* uuid) {
 
     char* sdrPath = malloc(strlen(filePath) + strlen(".sdr") + 1);
     sprintf(sdrPath, "%s.sdr", filePath);
+    free(filePath);
     
     char* sdrScriptPath = malloc(strlen(sdrPath) + strlen("/script.sh") + 1);
     sprintf(sdrScriptPath, "%s/script.sh", sdrPath);
 
-    bool useHooks = false;
     FILE* file = fopen(sdrScriptPath, "r");
-    if (file) {
-        for (int i=0; i < 6; i++) {
-            int bufferSize = 1024;
-            char* buffer = malloc(bufferSize);
-            buffer[0] = '\0';
-            int lineLength = 0;
-            while (true)
-            {
-                char character = fgetc(file);
-                if (character == '\n' || character == '\r')
-                {
-                    break;
-                }
-
-                if (lineLength + 2 >= bufferSize)
-                {
-                    buffer = realloc(buffer, bufferSize+=1024);
-                }
-
-                buffer[lineLength++] = character;
-                buffer[lineLength+1] = '\0';
-            }
-
-            // Start reading the header
-            if (strncmp(buffer, "# UseHooks", strlen("# UseHooks")))
-            {
-                useHooks = true;
-                free(buffer);
-                break;
-            }
-            free(buffer);
-        }
-        fclose(file); // We are done reading the file
+    if (!file) {
+        free(sdrPath);
+        free(sdrScriptPath);
+        return;
     }
 
+    struct ScriptHeader header;
+    readScriptHeader(file, &header);
+    fclose(file);
+
     // If the file is uses hooks, run removal hook
-    if (useHooks) {
+    if (header.useHooks) {
         char* escapedPath = malloc(strlen(sdrScriptPath)*2 + 1);
         int escapedPathLength = 0;
         for (int i=0; i < strlen(sdrScriptPath); i++) {
@@ -394,20 +341,23 @@ void remove_file(const char* path, const char* filename, char* uuid) {
             escapedPath[escapedPathLength++] = sdrScriptPath[i];
         }
         escapedPath[escapedPathLength] = '\0';
+        free(sdrScriptPath);
 
         syslog(LOG_INFO, "Running remove event");
         const int pid = fork();
         if (pid == 0) {
-            char* command = malloc(strlen("source \"") + escapedPathLength + strlen("\"; on_remove;") + 1);
-            sprintf(command, "source \"%s\"; on_remove;", escapedPath);
+            char* command = buildCommand("source \"%s\"; on_remove;", escapedPath);
+            free(escapedPath);
             execl("/var/local/mkk/su", command, NULL);
         } else {
+            free(escapedPath);
             waitpid(pid, NULL, 0);
         }
     }
 
     // Actually remove the file (and the entry)
     nftw(sdrPath, remove_callback, INT_MAX, FTW_DEPTH);
+    free(sdrPath);
     scanner_delete_ccat_entry(uuid);
 }
 
