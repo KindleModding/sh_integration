@@ -1,7 +1,5 @@
 #pragma once
 
-extern "C" {
-
 #include "cJSON.h"
 
 enum ScannerEventType {
@@ -23,11 +21,9 @@ struct scanner_event {
 
 typedef int(ScannerEventHandler)(const struct scanner_event *event);
 
-int scanner_post_change(cJSON *json);
-void scanner_gen_uuid(char *out, int buffer_size);
-char *scanner_get_thumbnail_for_uuid(char *uuid);
-void scanner_update_ccat(char *uuid, char *thumbnail_path);
-void scanner_delete_ccat_entry(char *uuid);
-char* getSha1Hash(const char* data);
-
-}
+__attribute__((__visibility__("default"))) int scanner_post_change(cJSON *json);
+__attribute__((__visibility__("default"))) void scanner_gen_uuid(char *out, int buffer_size);
+__attribute__((__visibility__("default"))) char *scanner_get_thumbnail_for_uuid(char *uuid);
+__attribute__((__visibility__("default"))) void scanner_update_ccat(char *uuid, char *thumbnail_path);
+__attribute__((__visibility__("default"))) void scanner_delete_ccat_entry(char *uuid);
+__attribute__((__visibility__("default"))) char* getSha1Hash(const char* data);

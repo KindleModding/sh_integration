@@ -1,4 +1,4 @@
-project('sh_integration', 'c', 'cpp', version : '1.0.0', default_options: ['cpp_std=c++17'])
+project('sh_integration', 'c', version : '1.0.0', default_options: ['cpp_std=c++17'])
 
 # Fetch our dependencies
 cjson_dep = subproject('cjson', default_options: ['default_library=static']).get_variable('libcjson_dep')

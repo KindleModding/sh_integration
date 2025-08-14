@@ -1,6 +1,6 @@
 scanner_stub = library(
     'scanner',
-    'scanner/scanner.cpp',
+    'scanner/scanner.c',
     include_directories: ['scanner/'],
     name_prefix: 'lib',
     dependencies: [cjson_dep]

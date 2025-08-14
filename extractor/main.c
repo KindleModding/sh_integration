@@ -1,5 +1,4 @@
 #include "scanner.h"
-#include <cstring>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +9,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <limits.h>
 #include "cJSON.h"
+
+#define __USE_XOPEN_EXTENDED
+#include <ftw.h>
 
 cJSON* generateChangeRequest(char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string) {
     syslog(LOG_INFO, "Generating change request for %s\n", filePath);
@@ -67,7 +70,7 @@ typedef cJSON* (ChangeRequestGenerator)(const char* file_path, const char* uuid)
 void index_file(char *path, char* filename) {
     syslog(LOG_INFO, "Indexing file: %s/%s", path, filename);
 
-    char* full_path = malloc(strlen(path) + 1 + strlen(filename));
+    char* full_path = malloc(strlen(path) + 1 + strlen(filename) + 1);
     full_path[0] = '\0';
     strcat(full_path, path);
     strcat(full_path, "/");
@@ -82,56 +85,88 @@ void index_file(char *path, char* filename) {
     char* author_string = NULL;
     char* icon_string = NULL;
 
-    char* line = malloc(1024);
-
     bool useHooks = false;
 
     // Read data from file header
     FILE* file = fopen(full_path, "r");
     if (file) {
         for (int i=0; i < 6; i++) {
-            if (!std::getline(file, line)) {
-                break;
+            int bufferSize = 1024;
+            char* buffer = malloc(bufferSize);
+            buffer[0] = '\0';
+            int lineLength = 0;
+            while (true)
+            {
+                char character = fgetc(file);
+                if (character == '\n' || character == '\r')
+                {
+                    break;
+                }
+
+                if (lineLength + 2 >= bufferSize)
+                {
+                    buffer = realloc(buffer, bufferSize+=1024);
+                }
+
+                buffer[lineLength++] = character;
+                buffer[lineLength+1] = '\0';
             }
 
             // Start reading the header
-            if (line.substr(0, 8) == "# Name: ") {
-                name_string = line.substr(8);
-            } else if (line.substr(0, 10) == "# Author: ") {
-                author_string = line.substr(10);
-            } else if (line.substr(0, 8) == "# Icon: ") {
-                icon_string = line.substr(8);
-            } else if (line.substr(0, 10) == "# UseHooks") {
+            if (strncmp(buffer, "# Name: ", strlen("# Name: ")))
+            {
+                name_string = strdup(buffer + strlen("# Name: "));
+            }
+            else if (strncmp(buffer, "# Author: ", strlen("# Author: ")))
+            {
+                author_string = strdup(buffer + strlen("# Author: "));
+            }
+            else if (strncmp(buffer, "# Icon: ", strlen("# Icon: ")))
+            {
+                icon_string = strdup(buffer + strlen("# Icon: "));
+            }
+            else if (strncmp(buffer, "# UseHooks", strlen("# UseHooks")))
+            {
                 useHooks = true;
             }
+            free(buffer);
         }
         fclose(file); // We are done reading the file
     }
 
-    if (icon_string.substr(0, 10) == "data:image" || useHooks) {
+    bool validIcon = icon_string != NULL && strncmp(icon_string, "data:image", strlen("data:image"));
+    if (validIcon || useHooks) {
         // Create sdr folder
-        const std::string sdr_path = full_path.string() + ".sdr";
-        std::filesystem::create_directory(sdr_path);
+        char* sdr_path = strdup(full_path);
+        strcat(sdr_path, ".sdr");
+        mkdir(sdr_path, 0755);
 
-        if (icon_string.substr(0, 10) == "data:image") {
+        if (validIcon) {
             //data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAA
-            const int fileTypeIndex = icon_string.find('/') + 1;
-            const int b64StartIndex = icon_string.find(',') + 1;
-            int fileTypeEndIndex = icon_string.find(';');
-            if (fileTypeEndIndex == -1) {
-                fileTypeEndIndex = b64StartIndex - 1;
+            char* fileTypePointer = strchr(icon_string, '/')+1;
+            char* fileTypeEndPointer = strchr(icon_string, ';')-1;
+            char* b64Pointer = strchr(icon_string, ',')+1;
+            if (fileTypeEndPointer == NULL)
+            {
+                fileTypeEndPointer = b64Pointer-1;
             }
 
-            const std::string fileType = icon_string.substr(fileTypeIndex, fileTypeEndIndex - fileTypeIndex);
-            const std::string icon_sdr_path = full_path.string() + ".sdr/icon." + fileType;
+            char* fileType = malloc(fileTypeEndPointer - fileTypePointer + 1);
+            strncpy(fileType, fileTypePointer, fileTypeEndPointer - fileTypePointer);
+            fileType[fileTypeEndPointer - fileTypePointer] = '\0';
+
+            char* icon_sdr_path = malloc(strlen(full_path) + strlen(".sdr/icon.") + strlen(fileType) + 1);
+            icon_sdr_path[0] = '\0';
+            strcat(icon_sdr_path, full_path);
+            strcat(icon_sdr_path, ".sdr/icon.");
+            strcat(icon_sdr_path, fileType);
 
             // Parse the base64
-            std::ofstream file;
-            file.open(icon_sdr_path, std::ios::out | std::ios::binary);
+            FILE* file = fopen(icon_sdr_path, "wb");
 
             char currentByte = 0;
             int processedBits = 0;
-            for (int i=b64StartIndex; i < icon_string.length(); i++) {
+            for (int i=0; i < (strlen(icon_string) - strlen(b64Pointer)); i++) {
                 // Convert the base64 character to binary
                 char value = 0;
                 if (icon_string[i] >= 'A' && icon_string[i] <= 'Z') {
@@ -150,11 +185,11 @@ void index_file(char *path, char* filename) {
 
                 // Add data to the currentByte
                 currentByte |= (value << 2) >> processedBits;
-                int consumedBits = std::min(8 - processedBits, 6);
+                int consumedBits = (8 - processedBits) < 6 ? 8 - processedBits : 6;
                 processedBits += consumedBits;
 
                 if (processedBits >= 8) {
-                    file.put(currentByte);
+                    putc(currentByte, file);
                     processedBits -= 8;
 
                     if (icon_string[i] == '=') {
@@ -167,7 +202,7 @@ void index_file(char *path, char* filename) {
                     processedBits = 6 - consumedBits;
                 }
             }
-            file.close();
+            fclose(file);
 
             icon_string = icon_sdr_path;
         }
@@ -175,24 +210,38 @@ void index_file(char *path, char* filename) {
         if (useHooks) {
             // If the file is functional, run install hook
             if (useHooks) {
-                std::string escapedPath = full_path.string();
-                for (int i=0; i < escapedPath.length(); i++) {
-                    if (escapedPath[i] == '"') {
-                        escapedPath.insert(i, "\\");
-                        i += 1; // Skip character
+                char* escapedPath = malloc(strlen(full_path)*2 + 1);
+                int escapedPathLength = 0;
+                for (int i=0; i < strlen(full_path); i++) {
+                    if (full_path[i] == '"') {
+                        escapedPath[escapedPathLength++] = '\\';
                     }
+                    escapedPath[escapedPathLength++] = full_path[i];
                 }
+                escapedPath[escapedPathLength] = '\0';
 
                 syslog(LOG_INFO, "Running install event");
                 const int pid = fork();
                 if (pid == 0) {
-                    syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedPath + "\"; on_install;").c_str());
-                    execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedPath + "\"; on_install;").c_str(), NULL);
+                    char* command = malloc(escapedPathLength + 32);
+                    sprintf(command, "source \"%s\"; on_install;", escapedPath);
+                    syslog(LOG_INFO, "Executing command: %s", command);
+                    execl("/var/local/mkk/su", "su", "-c", command, NULL);
                 } else {
                     waitpid(pid, NULL, 0);
                 }
 
-                std::filesystem::copy_file(full_path, sdr_path + "/script.sh"); // We copy the script to sdr folder in case we need 
+                free(escapedPath);
+
+                FILE* scriptFile = fopen(full_path, "rb");
+                char* sdrFilePath = malloc(strlen(full_path) + strlen("/script.sh") + 1);
+                sdrFilePath[0] = '\0';
+                strcat(sdrFilePath, full_path);
+                strcat(sdrFilePath, "/script.sh");
+                FILE* sdrFile = fopen(sdrFilePath, "wb");
+                while (!feof(scriptFile)) {
+                    putc(getc(scriptFile), sdrFile);
+                }
             }
         }
     }
@@ -241,7 +290,7 @@ void index_file(char *path, char* filename) {
         return;
     }
     cJSON_AddItemToObject(location_filter, "path", cJSON_CreateString("location"));
-    cJSON_AddItemToObject(location_filter, "value", cJSON_CreateString(full_path.c_str()));
+    cJSON_AddItemToObject(location_filter, "value", cJSON_CreateString(full_path));
 
     cJSON* Equals = cJSON_CreateObject();
     if (!Equals) {
@@ -280,65 +329,89 @@ void index_file(char *path, char* filename) {
     cJSON_Delete(json);
 }
 
+int remove_callback(const char* pathname, const struct stat* statBuffer, int objInfo, struct FTW* ftw)
+{
+    remove(pathname);
+    return 0;
+}
+
 void remove_file(const char* path, const char* filename, char* uuid) {
     syslog(LOG_INFO, "Removing file: %s/%s", path, filename);
-    std::filesystem::path filePath;
-    filePath += path;
-    filePath += "/";
-    filePath += filename;
-    std::string sdrScriptPath = filePath.string() + ".sdr/script.sh";
+    char* filePath = malloc(strlen(path) + 1 + strlen(filename) + 1);
+    sprintf(filePath, "%s/%s", path, filename);
 
-    std::string icon_string;
+    char* sdrPath = malloc(strlen(filePath) + strlen(".sdr") + 1);
+    sprintf(sdrPath, "%s.sdr", filePath);
+    
+    char* sdrScriptPath = malloc(strlen(sdrPath) + strlen("/script.sh") + 1);
+    sprintf(sdrScriptPath, "%s/script.sh", sdrPath);
+
     bool useHooks = false;
-
-    // Read data from file header
-    std::string line;
-    std::ifstream file(sdrScriptPath);
-    if (file.is_open()) {
+    FILE* file = fopen(sdrScriptPath, "r");
+    if (file) {
         for (int i=0; i < 6; i++) {
-            if (!std::getline(file, line)) {
+            int bufferSize = 1024;
+            char* buffer = malloc(bufferSize);
+            buffer[0] = '\0';
+            int lineLength = 0;
+            while (true)
+            {
+                char character = fgetc(file);
+                if (character == '\n' || character == '\r')
+                {
+                    break;
+                }
+
+                if (lineLength + 2 >= bufferSize)
+                {
+                    buffer = realloc(buffer, bufferSize+=1024);
+                }
+
+                buffer[lineLength++] = character;
+                buffer[lineLength+1] = '\0';
+            }
+
+            // Start reading the header
+            if (strncmp(buffer, "# UseHooks", strlen("# UseHooks")))
+            {
+                useHooks = true;
+                free(buffer);
                 break;
             }
-            
-            // Look for Functional flag
-            if (line.substr(0, 10) == "# UseHooks") {
-                useHooks = true;
-            }
+            free(buffer);
         }
-        file.close(); // We are done reading the file
-    } else {
-        syslog(LOG_INFO, "Unable to open file %s", filePath.string().c_str());
+        fclose(file); // We are done reading the file
     }
 
     // If the file is uses hooks, run removal hook
     if (useHooks) {
-        std::string escapedScriptPath = sdrScriptPath;
-        for (int i=0; i < escapedScriptPath.length(); i++) {
-            if (escapedScriptPath[i] == '"') { // Who thought this was a good idea???
-                escapedScriptPath.insert(i, "\\");
-                i += 1; // Skip character
+        char* escapedPath = malloc(strlen(sdrScriptPath)*2 + 1);
+        int escapedPathLength = 0;
+        for (int i=0; i < strlen(sdrScriptPath); i++) {
+            if (sdrScriptPath[i] == '"') {
+                escapedPath[escapedPathLength++] = '\\';
             }
+            escapedPath[escapedPathLength++] = sdrScriptPath[i];
         }
+        escapedPath[escapedPathLength] = '\0';
 
         syslog(LOG_INFO, "Running remove event");
         const int pid = fork();
         if (pid == 0) {
-            syslog(LOG_INFO, "Executing command: %s", ("source \"" + escapedScriptPath + "\"; on_remove;").c_str());
-            execl("/var/local/mkk/su", "su", "-c", ("source \"" + escapedScriptPath + "\"; on_remove;").c_str(), NULL);
+            char* command = malloc(strlen("source \"") + escapedPathLength + strlen("\"; on_remove;") + 1);
+            sprintf(command, "source \"%s\"; on_remove;", escapedPath);
+            execl("/var/local/mkk/su", command, NULL);
         } else {
             waitpid(pid, NULL, 0);
         }
     }
 
     // Actually remove the file (and the entry)
-    //std::filesystem::remove(filePath); // No this isn't needed
-    std::filesystem::remove_all(filePath.string() + ".sdr");
+    nftw(sdrPath, remove_callback, INT_MAX, FTW_DEPTH);
     scanner_delete_ccat_entry(uuid);
 }
 
 int extractor(const struct scanner_event* event) {
-    std::filesystem::path appPath;
-
     switch (event->event_type) {
         case SCANNER_ADD:
             index_file(event->path, event->filename);
@@ -360,7 +433,7 @@ int extractor(const struct scanner_event* event) {
     return 0;
 }
 
-extern "C" __attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
+__attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
   openlog("com.notmarek.shell_integration.extractor", LOG_PID, LOG_DAEMON);
   *handler = extractor;
   *unk1 = 0;
