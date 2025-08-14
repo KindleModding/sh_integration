@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+char* buildCommand(char* command, char* sub)
+{
+    char* builtCommand = malloc(strlen(command) + strlen(sub) + 1);
+    sprintf(builtCommand, command, sub);
+    return builtCommand;
+}
+
 struct ScriptHeader
 {
     char* name;

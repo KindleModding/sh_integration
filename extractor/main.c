@@ -68,13 +68,6 @@ cJSON* generateChangeRequest(char* filePath, char* uuid, char* name_string, char
     return json;
 }
 
-char* buildCommand(char* command, char* sub)
-{
-    char* builtCommand = malloc(strlen(command) + strlen(sub) + 1);
-    sprintf(builtCommand, command, sub);
-    return builtCommand;
-}
-
 typedef cJSON* (ChangeRequestGenerator)(const char* file_path, const char* uuid);
 void index_file(char *path, char* filename) {
     syslog(LOG_INFO, "Indexing file: %s/%s", path, filename);
@@ -102,8 +95,8 @@ void index_file(char *path, char* filename) {
     bool validIcon = header.icon != NULL && strncmp(header.icon, "data:image", strlen("data:image"));
     if (validIcon || useHooks) {
         // Create sdr folder
-        char* sdr_path = strdup(full_path);
-        strcat(sdr_path, ".sdr");
+        char* sdr_path = malloc(strlen(full_path) + strlen(".sdr") + 1);
+        sprintf(sdr_path, "%s.sdr", full_path);
         mkdir(sdr_path, 0755);
 
         if (validIcon) {
@@ -121,10 +114,7 @@ void index_file(char *path, char* filename) {
             fileType[fileTypeEndPointer - fileTypePointer] = '\0';
 
             char* icon_sdr_path = malloc(strlen(full_path) + strlen(".sdr/icon.") + strlen(fileType) + 1);
-            icon_sdr_path[0] = '\0';
-            strcat(icon_sdr_path, full_path);
-            strcat(icon_sdr_path, ".sdr/icon.");
-            strcat(icon_sdr_path, fileType);
+            sprintf(icon_sdr_path, "%s.sdr/icon.%s", full_path, fileType);
 
             // Parse the base64
             FILE* file = fopen(icon_sdr_path, "wb");
@@ -172,6 +162,7 @@ void index_file(char *path, char* filename) {
             free(header.icon); // Shennanigans
             header.icon = icon_sdr_path;
             free(sdr_path);
+            free(fileType);
         }
 
         if (useHooks) {
@@ -227,6 +218,7 @@ void index_file(char *path, char* filename) {
     if (!array) {
         syslog(LOG_CRIT, "Failed to create cJSON array");
         cJSON_Delete(json);
+        free(full_path);
         return;
     }
 
@@ -235,6 +227,7 @@ void index_file(char *path, char* filename) {
         syslog(LOG_CRIT, "Failed to create a JSON object");
         cJSON_Delete(json);
         cJSON_Delete(array);
+        free(full_path);
         return;
     }
 
@@ -245,6 +238,7 @@ void index_file(char *path, char* filename) {
         cJSON_Delete(array);
         cJSON_Delete(what);
         freeScriptHeader(&header);
+        free(full_path);
         return;
     }
 
@@ -255,6 +249,7 @@ void index_file(char *path, char* filename) {
         cJSON_Delete(array);
         cJSON_Delete(what);
         freeScriptHeader(&header);
+        free(full_path);
         cJSON_Delete(change);
         return;
     }
@@ -268,6 +263,7 @@ void index_file(char *path, char* filename) {
         cJSON_Delete(array);
         cJSON_Delete(what);
         freeScriptHeader(&header);
+        free(full_path);
         cJSON_Delete(change);
         cJSON_Delete(location_filter);
         return;
@@ -281,6 +277,7 @@ void index_file(char *path, char* filename) {
         cJSON_Delete(array);
         cJSON_Delete(what);
         freeScriptHeader(&header);
+        free(full_path);
         cJSON_Delete(change);
         cJSON_Delete(location_filter);
         cJSON_Delete(Equals);
@@ -299,6 +296,7 @@ void index_file(char *path, char* filename) {
 
     cJSON_Delete(json);
     freeScriptHeader(&header);
+    free(full_path);
 }
 
 int remove_callback(const char* pathname, const struct stat* statBuffer, int objInfo, struct FTW* ftw)
