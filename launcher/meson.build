@@ -5,4 +5,4 @@ sources = files(
 #    './src/includes'
 #)
 
-executable('sh_integration_launcher', sources, dependencies: [ lipc_dep ])
+executable('sh_integration_launcher', sources, include_directories: ['../utils'], dependencies: [ lipc_dep ])

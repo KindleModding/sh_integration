@@ -1,4 +1,4 @@
-#include "lipc.h"
+#include "openlipc.h"
 #include "unistd.h"
 #include <stdio.h>
 #include <string.h>
@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include "utils.h"
 
 #define SERVICE_NAME "com.notmarek.shell_integration.launcher"
 
@@ -79,25 +80,15 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         }
     }
     filePath[currentFilepathLen] = '\0';
-
-
-    bool useFBInk = true;
-    bool useHooks = false;
+    
     FILE* file = fopen(filePath, "r");
-    if (file) {
-        char buffer[32];
-        for (int i=0; i < 6; i++) {
-            fgets(buffer, 32, file);
-
-            // Start reading the header
-            if (strcmp(buffer, "# DontUseFBInk\n") == 0) {
-                useFBInk = false;
-            } else if (strcmp(buffer, "# UseHooks\n") == 0) {
-                useHooks = true;
-            }
-        }
-        fclose(file);
+    if (!file) {
+        free(filePath);
+        return stub(lipc, property, value, data);
     }
+
+    struct ScriptHeader header;
+    readScriptHeader(file, &header);
 
     char* escapedPath = malloc((strlen(filePath) * 2) + 1);
     int escapedPathLength = 0;
@@ -109,31 +100,16 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     }
     escapedPath[escapedPathLength] = '\0';
 
-    int commandLength = strlen("sh \"") + escapedPathLength + strlen("\"");
-    char* command = malloc(commandLength + 1);
-    command[0] = '\0';
-    strcat(command, "sh \"");
-    strcat(command, escapedPath);
-    strcat(command, "\"");
+    char* command = buildCommand("sh \"%s\"", escapedPath);
 
-    if (useHooks) { // useHooks script - source it and use `on_run`
+    if (header.useHooks) { // useHooks script - source it and use `on_run`
         free(command);
-        commandLength = strlen("sh -c \"source \\\"") + escapedPathLength + strlen("\\\"; on_run;\"");
-        command = malloc(commandLength + 1);
-        command[0] = '\0';
-        strcat(command, "sh -c \"source \\\"");
-        strcat(command, escapedPath);
-        strcat(command, "\\\"; on_run;\"");
+        command = buildCommand("sh -c \"source \\\"%s\\\"; on_run;\"", escapedPath);
     }
-    if (useFBInk) {
+    if (header.useFBInk) {
         char* old_command = strdup(command);
         free(command);
-        commandLength = strlen("/mnt/us/libkh/bin/fbink -k; ") + strlen(old_command) + strlen(" 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
-        command = malloc(commandLength + 1);
-        command[0] = '\0';
-        strcat(command, "/mnt/us/libkh/bin/fbink -k; ");
-        strcat(command, old_command);
-        strcat(command, " 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r");
+        command = buildCommand("/mnt/us/libkh/bin/fbink -k; %s 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r", old_command);
         free(old_command);
     }
 
@@ -149,6 +125,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     free(filePath);
     free(escapedPath);
     free(command);
+    freeScriptHeader(&header);
     return stub(lipc, property, value, data);
 }
 
