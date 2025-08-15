@@ -44,10 +44,10 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
     for (int i=0; i < 6; i++) {
         buffer[0] = '\0';
         int lineLength = 0;
-        while (!feof(file))
+        char c;
+        while ((c = fgetc(file)) != EOF)
         {
-            char character = fgetc(file);
-            if (character == '\n' || character == '\r')
+            if (c == '\n' || c == '\r')
             {
                 break;
             }
@@ -57,7 +57,7 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
                 buffer = realloc(buffer, bufferSize+=1024);
             }
 
-            buffer[lineLength++] = character;
+            buffer[lineLength++] = c;
         }
         buffer[lineLength] = '\0';
 

@@ -1,7 +1,7 @@
 #include <cjson/cJSON.h>
 #include "scanner.h"
 
-cJSON* generateChangeRequest(char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string);
+cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string);
 typedef cJSON* (ChangeRequestGenerator)(const char* file_path, const char* uuid);
 void index_file(char *path, char* filename);
 int remove_callback(const char* pathname, const struct stat* statBuffer, int objInfo, struct FTW* ftw);
