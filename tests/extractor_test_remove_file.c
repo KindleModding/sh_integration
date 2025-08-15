@@ -29,7 +29,7 @@ int main()
         .glob = ""
     };
 
-    handler(&event);
+    assert(handler(&event) == 0);
     
     assert(stat("./test.sh.sdr/icon.png", &stats) != 0);
     assert(stat("./test.sh.sdr", &stats) != 0);

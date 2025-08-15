@@ -57,7 +57,7 @@ int main()
         .glob = ""
     };
 
-    handler(&event);
+    assert(handler(&event) == 0);
 
     struct stat stats;
     assert(stat("./test.sh.sdr/icon.png", &stats) == 0);
