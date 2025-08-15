@@ -2,6 +2,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
+
+void recursiveDelete(char* path)
+{
+    printf("Opening: %s\n", path);
+    DIR* dir = opendir(path);
+    struct dirent* item;
+    while ((item = readdir(dir)) != NULL)
+    {
+        if (strcmp(item->d_name, ".") == 0 || strcmp(item->d_name, "..") == 0)
+        {
+            continue;
+        }
+        char* itemPath = malloc(strlen(path) + 1 + strlen(item->d_name) + 1);
+        sprintf(itemPath, "%s/%s", path, item->d_name);
+        if (item->d_type == DT_DIR)
+        {
+            recursiveDelete(itemPath);
+        }
+        printf("Removing child: %s\n", itemPath);
+        remove(itemPath);
+        free(itemPath);
+    }
+    printf("Removing parent: %s\n", path);
+    remove(path);
+    closedir(dir);
+}
 
 char* buildCommand(char* command, char* sub)
 {

@@ -256,9 +256,10 @@ void index_file(char *path, char* filename) {
     free(full_path);
 }
 
-int remove_callback(const char* pathname, const struct stat* statBuffer, int objInfo, struct FTW* ftw)
+int remove_callback(const char* fpath, const struct stat* sb, int typeflag, struct FTW* ftwbuf)
 {
-    remove(pathname);
+    printf("Remove callback called!\n");
+    remove(fpath);
     return 0;
 }
 
@@ -274,7 +275,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
     
     char* sdrScriptPath = malloc(strlen(sdrPath) + strlen("/script.sh") + 1);
     sprintf(sdrScriptPath, "%s/script.sh", sdrPath);
-
+    
     FILE* file = fopen(sdrScriptPath, "r");
     if (!file) {
         free(sdrPath);
@@ -310,9 +311,12 @@ void remove_file(const char* path, const char* filename, char* uuid) {
             waitpid(pid, NULL, 0);
         }
     }
+    printf("Removing: %s\n", sdrPath);
 
-    // Actually remove the file (and the entry)
-    nftw(sdrPath, remove_callback, INT_MAX, FTW_DEPTH);
+    if (access(sdrPath, R_OK|W_OK) == F_OK)
+    {
+        recursiveDelete(sdrPath);
+    }
     free(sdrPath);
     scanner_delete_ccat_entry(uuid);
 }
