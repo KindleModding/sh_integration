@@ -256,13 +256,6 @@ void index_file(char *path, char* filename) {
     free(full_path);
 }
 
-int remove_callback(const char* fpath, const struct stat* sb, int typeflag, struct FTW* ftwbuf)
-{
-    printf("Remove callback called!\n");
-    remove(fpath);
-    return 0;
-}
-
 void remove_file(const char* path, const char* filename, char* uuid) {
     syslog(LOG_INFO, "Removing file: %s/%s", path, filename);
     printf("Removing file: %s/%s\n", path, filename);

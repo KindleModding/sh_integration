@@ -38,7 +38,26 @@ int compareFiles(FILE* a, FILE* b)
 
 int main()
 {
-    index_file(".", "test.sh");
+    ScannerEventHandler* handler;
+    int unk1;
+    load_extractor(&handler, &unk1);    
+
+    assert(unk1 == 0);
+
+    char uuid[37];
+    scanner_gen_uuid(uuid, 37);
+
+    struct scanner_event event = {
+        .event_type = SCANNER_ADD,
+        .path = ".",
+        .lipchandle = NULL,
+        .filename = "test.sh",
+        .uuid = uuid,
+        .glob = ""
+    };
+
+    handler(&event);
+
     struct stat stats;
     assert(stat("./test.sh.sdr/icon.png", &stats) == 0);
 

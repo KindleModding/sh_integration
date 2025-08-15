@@ -1,17 +1,17 @@
-testUtils = executable('testUtils', 'testUtils.c', include_directories: ['../utils', '.'])
-test('Test Utils', testUtils, is_parallel : false)
+utils_test = executable('utils_test', 'utils_test.c', include_directories: ['../utils', '.'])
+test('Test Utils', utils_test, is_parallel : false)
 
-testChangeRequest = executable('testChangeRequest', ['testChangeRequest.c', '../extractor/main.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
-test('Test Change Request Generator', testChangeRequest, is_parallel : false)
+extractor_test_change_request = executable('extractor_test_change_request', ['extractor_test_change_request.c', '../extractor/main.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
+test('Test Extractor Change Request Generator', extractor_test_change_request, is_parallel : false)
 
-testIndexFile = executable('testIndexFile', ['testIndexFile.c', '../extractor/main.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
+extractor_test_add_file = executable('extractor_test_add_file', ['extractor_test_add_file.c', '../extractor/main.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
 configure_file(
   input: 'test_image.png',
   output: 'example_icon.png',
   copy: true
 )
-test('Test Index File', testIndexFile, is_parallel : false)
+test('Test Extractor Add File', extractor_test_add_file, is_parallel : false)
 
-testRemoveFile = executable('testRemoveFile', ['testRemoveFile.c', '../extractor/main.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
-test('Test Remove File', testRemoveFile, is_parallel : false)
+extractor_test_remove_file = executable('extractor_test_remove_file', ['extractor_test_remove_file.c', '../extractor/main.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
+test('Test Extractor Remove File', extractor_test_remove_file, is_parallel : false)
 

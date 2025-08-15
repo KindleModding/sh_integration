@@ -7,7 +7,6 @@
 
 void recursiveDelete(char* path)
 {
-    printf("Opening: %s\n", path);
     DIR* dir = opendir(path);
     struct dirent* item;
     while ((item = readdir(dir)) != NULL)
@@ -22,11 +21,9 @@ void recursiveDelete(char* path)
         {
             recursiveDelete(itemPath);
         }
-        printf("Removing child: %s\n", itemPath);
         remove(itemPath);
         free(itemPath);
     }
-    printf("Removing parent: %s\n", path);
     remove(path);
     closedir(dir);
 }
