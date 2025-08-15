@@ -92,7 +92,7 @@ void index_file(char *path, char* filename) {
     readScriptHeader(file, &header);
     fclose(file);
 
-    bool validIcon = header.icon != NULL && strncmp(header.icon, "data:image", strlen("data:image"));
+    bool validIcon = header.icon != NULL && strncmp(header.icon, "data:image", strlen("data:image")) == 0;
     if (validIcon || useHooks) {
         // Create sdr folder
         char* sdr_path = malloc(strlen(full_path) + strlen(".sdr") + 1);

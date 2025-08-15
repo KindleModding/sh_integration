@@ -9,12 +9,4 @@ lipc_dep = lipc_stub_dep#dependency('lipc')
 
 subdir('./launcher')
 subdir('./extractor')
-
-##sources = files(
-##    './src/sh_runner.cpp'
-##)
-##include_dir = include_directories(
-##    './src/includes'
-##)
-##
-##executable('sh_runner', sources, include_directories: include_dir, dependencies: [ lipc_stub_dep ##])
+subdir('./tests')

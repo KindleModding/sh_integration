@@ -24,7 +24,6 @@ void freeScriptHeader(struct ScriptHeader* header)
     free(header->name);
     free(header->author);
     free(header->icon);
-    free(header);
 };
 
 void readScriptHeader(FILE* file, struct ScriptHeader* header)
@@ -59,23 +58,23 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
         buffer[lineLength] = '\0';
 
         // Start reading the header
-        if (strncmp(buffer, "# Name: ", strlen("# Name: ")))
+        if (strncmp(buffer, "# Name: ", strlen("# Name: ")) == 0)
         {
             header->name = strdup(buffer + strlen("# Name: "));
         }
-        else if (strncmp(buffer, "# Author: ", strlen("# Author: ")))
+        else if (strncmp(buffer, "# Author: ", strlen("# Author: ")) == 0)
         {
             header->author = strdup(buffer + strlen("# Author: "));
         }
-        else if (strncmp(buffer, "# Icon: ", strlen("# Icon: ")))
+        else if (strncmp(buffer, "# Icon: ", strlen("# Icon: ")) == 0)
         {
             header->icon = strdup(buffer + strlen("# Icon: "));
         }
-        else if (strncmp(buffer, "# UseHooks", strlen("# UseHooks")))
+        else if (strncmp(buffer, "# UseHooks", strlen("# UseHooks")) == 0)
         {
             header->useHooks = true;
         }
-        else if (strncmp(buffer, "# DontUseFBInk", strlen("# DontUseFBInk")))
+        else if (strncmp(buffer, "# DontUseFBInk", strlen("# DontUseFBInk")) == 0)
         {
             header->useFBInk = false;
         }
