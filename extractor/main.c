@@ -325,7 +325,7 @@ int extractor(const struct scanner_event* event) {
             // Don't run install hooks and such willy-nilly
             //index_file(event->path, event->filename);
             syslog(LOG_INFO, "Received unknown event: %i", event->event_type);
-            break;
+            return 0;
     }
 
     return 0;
