@@ -14,6 +14,7 @@
 pid_t app_pid = -1;
 bool shouldExit = false;
 
+
 LIPCcode stub(LIPC* lipc, const char* property, void* value, void* data) {
     syslog(LOG_INFO, "Stub called for \"%s\" with value \"%s\"", property, (char*) value);
     
@@ -58,6 +59,44 @@ LIPCcode unload_callback(LIPC* lipc, const char* property, void* value, void* da
     return result;
 }
 
+char* getScriptCommand(char* scriptPath)
+{
+    FILE* file = fopen(scriptPath, "r");
+    if (!file) {
+        return NULL;
+    }
+
+    struct ScriptHeader header;
+    readScriptHeader(file, &header);
+
+    char* escapedPath = malloc((strlen(scriptPath) * 2) + 1);
+    int escapedPathLength = 0;
+    for (int i=0; i < strlen(scriptPath); i++) {
+        if (scriptPath[i] == '"') {
+            escapedPath[escapedPathLength++] = '\\';
+        }
+        escapedPath[escapedPathLength++] = scriptPath[i];
+    }
+    escapedPath[escapedPathLength] = '\0';
+
+    char* command = buildCommand("sh \"%s\"", escapedPath);
+
+    if (header.useHooks) { // useHooks script - source it and use `on_run`
+        free(command);
+        command = buildCommand("sh -c \"source \\\"%s\\\"; on_run;\"", escapedPath);
+    }
+    if (header.useFBInk) {
+        char* old_command = strdup(command);
+        free(command);
+        command = buildCommand("/mnt/us/libkh/bin/fbink -k; %s 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r", old_command);
+        free(old_command);
+    }
+
+    freeScriptHeader(&header);
+    free(escapedPath);
+    return command;
+}
+
 LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) {
     char* rawFilePath = strchr(value, ':') + 6 + strlen(SERVICE_NAME) + 1;
     char* query = strchr(rawFilePath, '?');
@@ -81,39 +120,14 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     }
     filePath[currentFilepathLen] = '\0';
     
-    FILE* file = fopen(filePath, "r");
-    if (!file) {
-        free(filePath);
+    char* command = getScriptCommand(filePath);
+    if (command == NULL)
+    {
         return stub(lipc, property, value, data);
     }
 
-    struct ScriptHeader header;
-    readScriptHeader(file, &header);
-
-    char* escapedPath = malloc((strlen(filePath) * 2) + 1);
-    int escapedPathLength = 0;
-    for (int i=0; i < strlen(filePath); i++) {
-        if (filePath[i] == '"') {
-            escapedPath[escapedPathLength++] = '\\';
-        }
-        escapedPath[escapedPathLength++] = filePath[i];
-    }
-    escapedPath[escapedPathLength] = '\0';
-
-    char* command = buildCommand("sh \"%s\"", escapedPath);
-
-    if (header.useHooks) { // useHooks script - source it and use `on_run`
-        free(command);
-        command = buildCommand("sh -c \"source \\\"%s\\\"; on_run;\"", escapedPath);
-    }
-    if (header.useFBInk) {
-        char* old_command = strdup(command);
-        free(command);
-        command = buildCommand("/mnt/us/libkh/bin/fbink -k; %s 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r", old_command);
-        free(old_command);
-    }
-
     syslog(LOG_INFO, "Invoking app using \"%s\"", command);
+    utimensat(NULL, filePath, UTIME_NOW, 0);
     // Run the app on a background thread
     app_pid = fork();
     syslog(LOG_INFO, "Our app PID \"%d\"", app_pid);
@@ -123,12 +137,11 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     }
 
     free(filePath);
-    free(escapedPath);
     free(command);
-    freeScriptHeader(&header);
     return stub(lipc, property, value, data);
 }
 
+#ifndef LAUNCHER_TESTING
 int main(void) {
     openlog(SERVICE_NAME, LOG_PID, LOG_DAEMON);
 
@@ -163,3 +176,4 @@ int main(void) {
     LipcClose(lipc);
     return 0;
 }
+#endif
