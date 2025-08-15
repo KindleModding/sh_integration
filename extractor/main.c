@@ -268,47 +268,44 @@ void remove_file(const char* path, const char* filename, char* uuid) {
     sprintf(sdrScriptPath, "%s/script.sh", sdrPath);
     
     FILE* file = fopen(sdrScriptPath, "r");
-    if (!file) {
-        free(sdrPath);
-        free(sdrScriptPath);
-        return;
-    }
+    if (file) {
+        struct ScriptHeader header;
+        readScriptHeader(file, &header);
+        fclose(file);
 
-    struct ScriptHeader header;
-    readScriptHeader(file, &header);
-    fclose(file);
-
-    // If the file is uses hooks, run removal hook
-    if (header.useHooks) {
-        char* escapedPath = malloc(strlen(sdrScriptPath)*2 + 1);
-        int escapedPathLength = 0;
-        for (int i=0; i < strlen(sdrScriptPath); i++) {
-            if (sdrScriptPath[i] == '"') {
-                escapedPath[escapedPathLength++] = '\\';
+        // If the file is uses hooks, run removal hook
+        if (header.useHooks) {
+            char* escapedPath = malloc(strlen(sdrScriptPath)*2 + 1);
+            int escapedPathLength = 0;
+            for (int i=0; i < strlen(sdrScriptPath); i++) {
+                if (sdrScriptPath[i] == '"') {
+                    escapedPath[escapedPathLength++] = '\\';
+                }
+                escapedPath[escapedPathLength++] = sdrScriptPath[i];
             }
-            escapedPath[escapedPathLength++] = sdrScriptPath[i];
-        }
-        escapedPath[escapedPathLength] = '\0';
-        free(sdrScriptPath);
+            escapedPath[escapedPathLength] = '\0';
+            free(sdrScriptPath);
 
-        syslog(LOG_INFO, "Running remove event");
-        const int pid = fork();
-        if (pid == 0) {
-            char* command = buildCommand("source \"%s\"; on_remove;", escapedPath);
-            free(escapedPath);
-            execl("/var/local/mkk/su", command, NULL);
-        } else {
-            free(escapedPath);
-            waitpid(pid, NULL, 0);
+            syslog(LOG_INFO, "Running remove event");
+            const int pid = fork();
+            if (pid == 0) {
+                char* command = buildCommand("source \"%s\"; on_remove;", escapedPath);
+                free(escapedPath);
+                execl("/var/local/mkk/su", command, NULL);
+            } else {
+                free(escapedPath);
+                waitpid(pid, NULL, 0);
+            }
         }
-    }
-    printf("Removing: %s\n", sdrPath);
+        printf("Removing: %s\n", sdrPath);
 
-    if (access(sdrPath, R_OK|W_OK) == F_OK)
-    {
-        recursiveDelete(sdrPath);
+        if (access(sdrPath, R_OK|W_OK) == F_OK)
+        {
+            recursiveDelete(sdrPath);
+        }
     }
     free(sdrPath);
+    free(sdrScriptPath);
     scanner_delete_ccat_entry(uuid);
 }
 
