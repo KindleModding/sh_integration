@@ -284,7 +284,6 @@ void remove_file(const char* path, const char* filename, char* uuid) {
                 escapedPath[escapedPathLength++] = sdrScriptPath[i];
             }
             escapedPath[escapedPathLength] = '\0';
-            free(sdrScriptPath);
 
             syslog(LOG_INFO, "Running remove event");
             const int pid = fork();

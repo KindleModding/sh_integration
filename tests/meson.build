@@ -24,6 +24,9 @@ test('Test Utils', utils_test, is_parallel : false)
 extractor_test_change_request = executable('extractor_test_change_request', ['extractor_test_change_request.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
 test('Test Extractor Change Request Generator', extractor_test_change_request, is_parallel : false)
 
+extractor_test_unknown_event = executable('extractor_test_unknown_event', ['extractor_test_unknown_event.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
+test('Test Extractor Unknown Event', extractor_test_unknown_event, is_parallel : false)
+
 extractor_test_add_file = executable('extractor_test_add_file', ['extractor_test_add_file.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
 configure_file(
   input: 'test_image.png',
