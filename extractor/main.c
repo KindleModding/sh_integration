@@ -35,17 +35,17 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
 
     cJSON_AddItemToObject(json, "uuid", cJSON_CreateString(uuid));
     cJSON_AddItemToObject(json, "location", cJSON_CreateString(filePath));
-    cJSON_AddItemToObject(json, "type", cJSON_CreateStringReference("Entry:Item"));
-    cJSON_AddItemToObject(json, "cdeType", cJSON_CreateStringReference("PDOC"));
+    cJSON_AddItemToObject(json, "type", cJSON_CreateString("Entry:Item"));
+    cJSON_AddItemToObject(json, "cdeType", cJSON_CreateString("PDOC"));
     cJSON_AddItemToObject(json, "cdeKey", cJSON_CreateString(getSha1Hash(filePath)));
     cJSON_AddItemToObject(json, "modificationTime", cJSON_CreateNumber(st.st_mtim.tv_sec));
     cJSON_AddItemToObject(json, "diskUsage", cJSON_CreateNumber(st.st_size));
     cJSON_AddItemToObject(json, "isVisibleInHome", cJSON_CreateTrue());
     cJSON_AddItemToObject(json, "isArchived", cJSON_CreateFalse());
-    cJSON_AddItemToObject(json, "mimeType", cJSON_CreateStringReference("text/x-shellscript"));
+    cJSON_AddItemToObject(json, "mimeType", cJSON_CreateString("text/x-shellscript"));
     cJSON_AddItemToObject(json, "displayObjects", refs);
     cJSON_AddItemToObject(json, "credits", authors);
-    cJSON_AddItemToObject(json, "publisher", cJSON_CreateStringReference("KMC"));
+    cJSON_AddItemToObject(json, "publisher", cJSON_CreateString("KMC"));
     const char *tags[] = {"NEW"};
     cJSON_AddItemToObject(json, "displayTags", cJSON_CreateStringArray(tags, 1));
     if (icon_string != NULL) {
@@ -56,11 +56,11 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
 
     cJSON_AddItemToArray(refs, titles_ref);
     cJSON_AddItemToArray(refs, authors_ref);
-    cJSON_AddItemToObject(titles_ref, "ref", cJSON_CreateStringReference("titles"));
-    cJSON_AddItemToObject(authors_ref, "ref", cJSON_CreateStringReference("credits"));
+    cJSON_AddItemToObject(titles_ref, "ref", cJSON_CreateString("titles"));
+    cJSON_AddItemToObject(authors_ref, "ref", cJSON_CreateString("credits"));
 
     cJSON_AddItemToArray(authors, author);
-    cJSON_AddItemToObject(author, "kind", cJSON_CreateStringReference("Author"));
+    cJSON_AddItemToObject(author, "kind", cJSON_CreateString("Author"));
     cJSON_AddItemToObject(author, "name", author_name);
     cJSON_AddItemToObject(author_name, "display", cJSON_CreateString((const char *)(author_string != NULL ? author_string : "Unknown")));
     
@@ -226,17 +226,17 @@ void index_file(char *path, char* filename) {
     cJSON* filter = cJSON_CreateObject();
     cJSON* change = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(json, "type", cJSON_CreateStringReference("ChangeRequest"));
+    cJSON_AddItemToObject(json, "type", cJSON_CreateString("ChangeRequest"));
     cJSON_AddItemToObject(json, "commands", array);
     cJSON_AddItemToArray(array, what);
     cJSON_AddItemToObject(what, "insertOr", filter);
     cJSON_AddItemToObject(filter, "filter", Equals);
-    cJSON_AddItemToObject(filter, "onConflict", cJSON_CreateStringReference("REPLACE"));
+    cJSON_AddItemToObject(filter, "onConflict", cJSON_CreateString("REPLACE"));
     cJSON_AddItemToObject(filter, "entry", change);
     generateChangeRequest(change, full_path, uuid, header.name, header.author, header.icon);
     cJSON_AddItemToObject(Equals, "Equals", location_filter);
-    cJSON_AddItemToObject(location_filter, "path", cJSON_CreateStringReference("location"));
-    cJSON_AddItemToObject(location_filter, "value", cJSON_CreateStringReference(full_path));
+    cJSON_AddItemToObject(location_filter, "path", cJSON_CreateString("location"));
+    cJSON_AddItemToObject(location_filter, "value", cJSON_CreateString(full_path));
 
 
     
