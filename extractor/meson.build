@@ -1,4 +1,5 @@
 sources = files(
+    '../utils/utils.c',
     './main.c'
 )
 

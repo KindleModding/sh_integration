@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <time.h>
 #include "utils.h"
 
 #define SERVICE_NAME "com.notmarek.shell_integration.launcher"
@@ -107,18 +108,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     syslog(LOG_INFO, "Raw path: \"%s\"", rawFilePath);
 
     // Parse the filePath as it is urlencoded
-    char* filePath = malloc(strlen(rawFilePath) + 1); // URLEncoded string will NEVER be longer decoded
-    int currentFilepathLen = 0;
-
-    for (size_t i=0; i < strlen(rawFilePath); i++) {
-        if (rawFilePath[i] == '%') {
-            filePath[currentFilepathLen++] = (char)(((rawFilePath[i+1] - '0') << 4) + (rawFilePath[i+2] - '0'));
-            i += 2;
-        } else {
-            filePath[currentFilepathLen++] = rawFilePath[i];
-        }
-    }
-    filePath[currentFilepathLen] = '\0';
+    char* filePath = urlDecode(rawFilePath);
     
     char* command = getScriptCommand(filePath);
     if (command == NULL)
@@ -127,7 +117,15 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     }
 
     syslog(LOG_INFO, "Invoking app using \"%s\"", command);
-    utimensat(NULL, filePath, UTIME_NOW, 0);
+    struct timespec time[2] = {{
+        .tv_nsec = UTIME_NOW,
+        .tv_sec = UTIME_NOW
+    }, {
+        .tv_nsec = UTIME_NOW,
+        .tv_sec = UTIME_NOW
+    }};
+    
+    utimensat(0, filePath, time, 0);
     // Run the app on a background thread
     app_pid = fork();
     syslog(LOG_INFO, "Our app PID \"%d\"", app_pid);

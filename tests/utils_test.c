@@ -3,10 +3,31 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+bool testURLDecode(char* encoded, char* decoded)
+{
+    char* testDecode = urlDecode(encoded);
+    if (strcmp(testDecode, decoded) != 0)
+    {
+        fprintf(stderr, "URL decode mismatch!\n");
+        fprintf(stderr, "Expected: %s\n", encoded);
+        fprintf(stderr, "Got: %s\n", testDecode);
+        free(testDecode);
+        return false;
+    }
+    free(testDecode);
+    return true;
+}
 
 int main()
 {
+    assert(testURLDecode("hello%20there", "hello there"));
+    assert(testURLDecode("Hello%20There%20This%20is%20a%20%25%20test%21", "Hello There This is a % test!"));
+    assert(testURLDecode("Testing", "Testing"));
+
+
     char* command = buildCommand("test %s testing", "hello");
     assert(strcmp(command, "test hello testing") == 0);
 

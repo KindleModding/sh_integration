@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cjson/cJSON.h>
 #include "scanner.h"
 
