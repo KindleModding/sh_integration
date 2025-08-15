@@ -245,13 +245,11 @@ void index_file(char *path, char* filename) {
     syslog(LOG_INFO, "ccat error: %d.", result);
     //printf("Json: %s\n", cJSON_Print(json));
 
-    cJSON_free(json);
-    cJSON_free(array);
-    cJSON_free(what);
-    cJSON_Delete(location_filter);
-    cJSON_free(Equals);
-    cJSON_free(filter);
-    cJSON_free(change);
+    /*if (json)
+    {
+        cJSON_Delete(json);
+    }*/
+    // Can you believe that cJSON deleting causes issues
     freeScriptHeader(&header);
     free(full_path);
 }
