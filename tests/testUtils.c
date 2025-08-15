@@ -35,4 +35,7 @@ int main()
     assert(header.useHooks);
     fprintf(stderr, "UseFBInk: %i\n", header.useFBInk);
     assert(!header.useFBInk);
+
+    fprintf(stderr, "Freeing header strings\n");
+    freeScriptHeader(&header);
 }

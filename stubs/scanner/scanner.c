@@ -1,10 +1,11 @@
 // libscanner stub file to link against
 #include "cjson/cJSON.h"
+#include <string.h>
 
 int scanner_post_change(cJSON *json) { return 0; }
 
 void scanner_gen_uuid(char *out, int buffer_size) {
-  out = "00000000-0000-0000-0000-000000000000";
+  strcpy(out, "00000000-0000-0000-0000-000000000000");
   return;
 }
 

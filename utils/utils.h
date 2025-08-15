@@ -24,6 +24,10 @@ void freeScriptHeader(struct ScriptHeader* header)
     free(header->name);
     free(header->author);
     free(header->icon);
+
+    header->name = NULL;
+    header->author = NULL;
+    header->icon = NULL;
 };
 
 void readScriptHeader(FILE* file, struct ScriptHeader* header)
