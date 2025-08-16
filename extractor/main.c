@@ -53,6 +53,11 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
         cJSON* displayTags = cJSON_CreateStringArray(&tag, 1);
         cJSON_AddItemToObject(insert, "displayTags", displayTags);
     }
+    else
+    {
+        cJSON* percentFinished = cJSON_CreateNumber(1337);
+        cJSON_AddItemToObject(insert, "percentFinished", percentFinished);
+    }
 
     cJSON* isVisibleInHome = cJSON_CreateTrue();
     cJSON_AddItemToObject(insert, "isVisibleInHome", isVisibleInHome);
