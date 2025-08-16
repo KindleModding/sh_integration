@@ -18,6 +18,11 @@ LIPCcode LipcSetStringProperty(LIPC *lipc, const char *service,
     printf("Setting string property %s.%s to %s\n", service, property, value);
     return LIPC_OK;
 }
+LIPCcode LipcSetIntProperty(LIPC *lipc, const char *service,
+    const char *property, int value) {
+    printf("Setting int property %s.%s to %i\n", service, property, value);
+    return LIPC_OK;
+}
 LIPCcode LipcGetStringProperty(LIPC *lipc, const char *service,
                                 const char *property, char **value) {
     printf("Getting string property %s.%s\n", service, property);
