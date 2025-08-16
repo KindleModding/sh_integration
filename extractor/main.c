@@ -12,7 +12,7 @@
 #include "cjson/cJSON.h"
 #include "utils.h"
 
-cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string) {
+cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string, bool new) {
     struct stat st;
     stat(filePath, &st);
 
@@ -47,9 +47,12 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
     cJSON* cdeType = cJSON_CreateString("PDOC");
     cJSON_AddItemToObject(insert, "cdeType", cdeType);
 
-    const char* tag = "NEW";
-    cJSON* displayTags = cJSON_CreateStringArray(&tag, 1);
-    cJSON_AddItemToObject(insert, "displayTags", displayTags);
+    if (new)
+    {
+        const char* tag = "NEW";
+        cJSON* displayTags = cJSON_CreateStringArray(&tag, 1);
+        cJSON_AddItemToObject(insert, "displayTags", displayTags);
+    }
 
     cJSON* isVisibleInHome = cJSON_CreateTrue();
     cJSON_AddItemToObject(insert, "isVisibleInHome", isVisibleInHome);
@@ -114,59 +117,11 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
     cJSON_AddItemToArray(commands, command);
     cJSON_AddItemToObject(json, "commands", commands);
 
-
-    /*cJSON *authors = cJSON_CreateArray();
-    cJSON *author = cJSON_CreateObject();
-    cJSON *author_name = cJSON_CreateObject();
-    cJSON *refs = cJSON_CreateArray();
-    cJSON *titles_ref = cJSON_CreateObject();
-    cJSON *authors_ref = cJSON_CreateObject();
-    cJSON *titles = cJSON_CreateArray();
-    cJSON *title = cJSON_CreateObject();
-
-
-    cJSON_AddItemToObject(json, "uuid", cJSON_CreateString(uuid));
-    cJSON_AddItemToObject(json, "location", cJSON_CreateString(filePath));
-    cJSON_AddItemToObject(json, "type", cJSON_CreateString("Entry:Item"));
-    cJSON_AddItemToObject(json, "cdeType", cJSON_CreateString("PDOC"));
-    cJSON_AddItemToObject(json, "cdeKey", cJSON_CreateString(getSha1Hash(filePath)));
-    cJSON_AddItemToObject(json, "modificationTime", cJSON_CreateNumber(st.st_mtim.tv_sec));
-    cJSON_AddItemToObject(json, "diskUsage", cJSON_CreateNumber(st.st_size));
-    cJSON_AddItemToObject(json, "isVisibleInHome", cJSON_CreateTrue());
-    cJSON_AddItemToObject(json, "isArchived", cJSON_CreateFalse());
-    cJSON_AddItemToObject(json, "mimeType", cJSON_CreateString("text/x-shellscript"));
-    cJSON_AddItemToObject(json, "displayObjects", refs);
-    cJSON_AddItemToObject(json, "credits", authors);
-    cJSON_AddItemToObject(json, "publisher", cJSON_CreateString("KMC"));
-    const char *tags[] = {"NEW"};
-    cJSON_AddItemToObject(json, "displayTags", cJSON_CreateStringArray(tags, 1));
-    if (icon_string != NULL) {
-        cJSON_AddItemToObject(json, "thumbnail",
-                            cJSON_CreateString(icon_string));
-    }
-    cJSON_AddItemToObject(json, "titles", titles);
-
-    cJSON_AddItemToArray(refs, titles_ref);
-    cJSON_AddItemToArray(refs, authors_ref);
-    cJSON_AddItemToObject(titles_ref, "ref", cJSON_CreateString("titles"));
-    cJSON_AddItemToObject(authors_ref, "ref", cJSON_CreateString("credits"));
-
-    cJSON_AddItemToArray(authors, author);
-    cJSON_AddItemToObject(author, "kind", cJSON_CreateString("Author"));
-    cJSON_AddItemToObject(author, "name", author_name);
-    cJSON_AddItemToObject(author_name, "display", cJSON_CreateString((const char *)(author_string != NULL ? author_string : "Unknown")));
-    
-    cJSON_AddItemToArray(titles, title);
-    cJSON_AddItemToObject(
-        title, "display",
-        cJSON_CreateString((const char *)(name_string != NULL ? name_string : basename(filePath))));
-    */
-
     return json;
 }
 
 typedef cJSON* (ChangeRequestGenerator)(const char* file_path, const char* uuid);
-void index_file(char *path, char* filename) {
+void index_file(char *path, char* filename, bool new) {
     printf("Indexing file: %s/%s\n", path, filename);
 
     char* full_path = malloc(strlen(path) + 1 + strlen(filename) + 1);
@@ -311,7 +266,7 @@ void index_file(char *path, char* filename) {
         return;
     }
     
-    generateChangeRequest(json, full_path, uuid, header.name, header.author, header.icon);
+    generateChangeRequest(json, full_path, uuid, header.name, header.author, header.icon, new);
     
 
     const int result = scanner_post_change(json);
@@ -372,30 +327,30 @@ void remove_file(const char* path, const char* filename, char* uuid) {
             }
         }
         printf("Removing: %s\n", sdrPath);
-
-        if (access(sdrPath, R_OK|W_OK) == F_OK)
-        {
-            recursiveDelete(sdrPath);
-        }
     }
+
+    if (access(sdrPath, R_OK|W_OK) == F_OK)
+    {
+        recursiveDelete(sdrPath);
+    }
+    
     free(sdrPath);
     free(sdrScriptPath);
     scanner_delete_ccat_entry(uuid);
 }
 
 int extractor(const struct scanner_event* event) {
-    printf("Extractor called with event %x\n", event);
     printf("Extractor called with event type %i\n", event->event_type);
     switch (event->event_type) {
         case SCANNER_ADD:
-            index_file(event->path, event->filename);
+            index_file(event->path, event->filename, true);
             break;
         case SCANNER_DELETE:
             remove_file(event->path, event->filename, event->uuid);
             break;
         case SCANNER_UPDATE:
             remove_file(event->path, event->filename, event->uuid); // Remove SDR and entry
-            index_file(event->path, event->filename); // Re-index with new metadata and such
+            index_file(event->path, event->filename, false); // Re-index with new metadata and such
             break;
         default:
             // Don't run install hooks and such willy-nilly
