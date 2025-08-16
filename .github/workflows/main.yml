@@ -6,6 +6,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: build
+      run: |
+          sudo apt-get install meson
+          meson setup builddir
+          meson test -C builddir
+    - uses: actions/upload-artifact@v4
+      with:
+        name: sh_integration-tests_logs
+        path: builddir/meson-logs
+
   build-kindlepw2:
     runs-on: ubuntu-latest
 
