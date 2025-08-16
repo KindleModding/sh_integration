@@ -8,7 +8,7 @@ int main()
 {
     ScannerEventHandler* handler;
     int unk1;
-    load_extractor(&handler, &unk1);    
+    load_file_extractor(&handler, &unk1);    
 
     assert(unk1 == 0);
 
@@ -24,7 +24,7 @@ int main()
         .glob = ""
     };
 
-    assert(handler(&event) == 0);
+    assert(handler(&event) == 1);
 
     return 0;
 }

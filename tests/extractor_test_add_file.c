@@ -40,7 +40,7 @@ int main()
 {
     ScannerEventHandler* handler;
     int unk1;
-    load_extractor(&handler, &unk1);    
+    load_file_extractor(&handler, &unk1);    
 
     assert(unk1 == 0);
 
@@ -51,7 +51,7 @@ int main()
         .event_type = SCANNER_ADD,
         .path = ".",
         .lipchandle = NULL,
-        .filename = "test.sh",
+        .filename = "./tests/test_hooks.sh",
         .uuid = uuid,
         .glob = ""
     };
@@ -59,10 +59,10 @@ int main()
     assert(handler(&event) == 0);
 
     struct stat stats;
-    assert(stat("./test.sh.sdr/icon.png", &stats) == 0);
+    assert(stat("./tests/test_hooks.sh.sdr/icon.png", &stats) == 0);
 
     fprintf(stderr, "Checking if icon was copied\n");
-    FILE* icon = fopen("./test.sh.sdr/icon.png", "r");
+    FILE* icon = fopen("./tests/test_hooks.sh.sdr/icon.png", "r");
     FILE* icon_truth = fopen("./tests/example_icon.png", "r");
     
     assert(compareFiles(icon_truth, icon) == 0);
@@ -72,9 +72,9 @@ int main()
 
 
     fprintf(stderr, "Checking if script was copied\n");
-    assert(stat("./test.sh.sdr/script.sh", &stats) == 0);
-    FILE* script = fopen("./test.sh.sdr/script.sh", "r");
-    FILE* script_truth = fopen("./test.sh", "r");
+    assert(stat("./tests/test_hooks.sh.sdr/script.sh", &stats) == 0);
+    FILE* script = fopen("./tests/test_hooks.sh.sdr/script.sh", "r");
+    FILE* script_truth = fopen("./tests/test_hooks.sh", "r");
 
     assert(compareFiles(script_truth, script) == 0);
 

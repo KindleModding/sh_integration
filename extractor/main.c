@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -18,12 +17,109 @@
 #include <ftw.h>
 
 cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string) {
-    syslog(LOG_INFO, "Generating change request for %s\n", filePath);
-
     struct stat st;
     stat(filePath, &st);
 
-    cJSON *authors = cJSON_CreateArray();
+    cJSON* changeRequestString = cJSON_CreateString("ChangeRequest");
+    cJSON_AddItemToObject(json, "type", changeRequestString);
+    cJSON* commands = cJSON_CreateArray();
+    cJSON* command = cJSON_CreateObject();
+    cJSON* insert = cJSON_CreateObject();
+    cJSON* jsonUUID = cJSON_CreateString(uuid);
+    cJSON_AddItemToObject(insert, "uuid", jsonUUID);
+    cJSON* jsonLocation = cJSON_CreateString(filePath);
+    cJSON_AddItemToObject(insert, "location", jsonLocation);
+    
+    cJSON* entryType = cJSON_CreateString("Entry:Item");
+    cJSON_AddItemToObject(insert, "type", entryType);
+
+    cJSON* modificationTime = cJSON_CreateNumber(st.st_mtim.tv_sec);
+    cJSON_AddItemToObject(insert, "modificationTime", modificationTime);
+
+    cJSON* diskUsage = cJSON_CreateNumber(st.st_size);
+    cJSON_AddItemToObject(insert, "diskUsage", diskUsage);
+
+    cJSON* contentSize = cJSON_CreateNumber(st.st_size);
+    cJSON_AddItemToObject(insert, "contentSize", contentSize);
+
+    cJSON* mimeType = cJSON_CreateString("text/x-shellscript");
+    cJSON_AddItemToObject(insert, "mimeType", mimeType);
+
+    cJSON* cdeKey = cJSON_CreateString(getSha1Hash(filePath));
+    cJSON_AddItemToObject(insert, "cdeKey", cdeKey);
+
+    cJSON* cdeType = cJSON_CreateString("PDOC");
+    cJSON_AddItemToObject(insert, "cdeType", cdeType);
+
+    const char* tag = "NEW";
+    cJSON* displayTags = cJSON_CreateStringArray(&tag, 1);
+    cJSON_AddItemToObject(insert, "displayTags", displayTags);
+
+    cJSON* isVisibleInHome = cJSON_CreateTrue();
+    cJSON_AddItemToObject(insert, "isVisibleInHome", isVisibleInHome);
+
+    cJSON* isArchived = cJSON_CreateFalse();
+    cJSON_AddItemToObject(insert, "isArchived", isArchived);
+
+    cJSON* displayObjects = cJSON_CreateArray();
+    cJSON* titleDisplayObject = cJSON_CreateObject();
+    cJSON* titleRef = cJSON_CreateString("titles");
+    cJSON* creditsDisplayObject = cJSON_CreateObject();
+    cJSON* creditsRef = cJSON_CreateString("credits");
+    cJSON_AddItemToObject(titleDisplayObject, "ref", titleRef);
+    cJSON_AddItemToObject(creditsDisplayObject, "ref", creditsRef);
+    cJSON_AddItemToArray(displayObjects, titleDisplayObject);
+    cJSON_AddItemToArray(displayObjects, creditsDisplayObject);
+    cJSON_AddItemToObject(insert, "displayObjects", displayObjects);
+
+    cJSON* credits = cJSON_CreateArray();
+    cJSON* credit = cJSON_CreateObject();
+    cJSON* kind = cJSON_CreateString("Author");
+    cJSON* name = cJSON_CreateObject();
+    
+    cJSON* author_display;
+    if (author_string)
+    {
+        author_display = cJSON_CreateString(author_string);
+    }
+    else
+    {
+        author_display = cJSON_CreateString("Unknown");
+    }
+
+    cJSON_AddItemToObject(name, "display", author_display);
+    cJSON_AddItemToObject(credit, "kind", kind);
+    cJSON_AddItemToObject(credit, "name", name);
+    cJSON_AddItemToArray(credits, credit);
+    cJSON_AddItemToObject(insert, "credits", credits);
+
+    cJSON* titles = cJSON_CreateArray();
+    cJSON* title_display = cJSON_CreateObject();
+    cJSON* title;
+    if (name_string)
+    {
+        title = cJSON_CreateString(name_string);
+    }
+    else
+    {
+        title = cJSON_CreateString(basename(filePath));
+    }
+
+    if (icon_string)
+    {
+        cJSON* thumbnail = cJSON_CreateString(icon_string);
+        cJSON_AddItemToObject(insert, "thumbnail", thumbnail);
+    }
+    
+    cJSON_AddItemToObject(title_display, "display", title);
+    cJSON_AddItemToArray(titles, title_display);
+    cJSON_AddItemToObject(insert, "titles", titles);
+    cJSON_AddItemToObject(command, "insert", insert);
+    cJSON_AddItemToArray(commands, command);
+    cJSON_AddItemToObject(json, "commands", commands);
+
+
+    /*cJSON *authors = cJSON_CreateArray();
     cJSON *author = cJSON_CreateObject();
     cJSON *author_name = cJSON_CreateObject();
     cJSON *refs = cJSON_CreateArray();
@@ -68,6 +164,7 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
     cJSON_AddItemToObject(
         title, "display",
         cJSON_CreateString((const char *)(name_string != NULL ? name_string : basename(filePath))));
+    */
 
     return json;
 }
@@ -75,7 +172,6 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
 typedef cJSON* (ChangeRequestGenerator)(const char* file_path, const char* uuid);
 void index_file(char *path, char* filename) {
     printf("Indexing file: %s/%s\n", path, filename);
-    syslog(LOG_INFO, "Indexing file: %s/%s", path, filename);
 
     char* full_path = malloc(strlen(path) + 1 + strlen(filename) + 1);
     sprintf(full_path, "%s/%s", path, filename);
@@ -138,7 +234,7 @@ void index_file(char *path, char* filename) {
                 } else if (header.icon[i] == '/') {
                     value = 63;
                 } else if (header.icon[i] != '=') {
-                    syslog(LOG_WARNING, "Invalid B64 at position %i", i); // Warn
+                    printf("Invalid B64 at position %i", i); // Warn
                 }
 
                 // Add data to the currentByte
@@ -181,12 +277,12 @@ void index_file(char *path, char* filename) {
             }
             escapedPath[escapedPathLength] = '\0';
 
-            syslog(LOG_INFO, "Running install event");
+            printf("Running install event");
             const int pid = fork();
             if (pid == 0) {
                 char* command = malloc(escapedPathLength + 32);
                 sprintf(command, "source \"%s\"; on_install;", escapedPath);
-                syslog(LOG_INFO, "Executing command: %s", command);
+                printf("Executing command: %s", command);
                 execl("/var/local/mkk/su", "su", "-c", command, NULL);
             } else {
                 waitpid(pid, NULL, 0);
@@ -218,44 +314,27 @@ void index_file(char *path, char* filename) {
         fprintf(stderr, "Failed to create a JSON object");
         return;
     }
-
-    cJSON* array = cJSON_CreateArray();
-    cJSON* what = cJSON_CreateObject();
-    cJSON* location_filter = cJSON_CreateObject();
-    cJSON* Equals = cJSON_CreateObject();
-    cJSON* filter = cJSON_CreateObject();
-    cJSON* change = cJSON_CreateObject();
-
-    cJSON_AddItemToObject(json, "type", cJSON_CreateString("ChangeRequest"));
-    cJSON_AddItemToObject(json, "commands", array);
-    cJSON_AddItemToArray(array, what);
-    cJSON_AddItemToObject(what, "insertOr", filter);
-    cJSON_AddItemToObject(filter, "filter", Equals);
-    cJSON_AddItemToObject(filter, "onConflict", cJSON_CreateString("REPLACE"));
-    cJSON_AddItemToObject(filter, "entry", change);
-    generateChangeRequest(change, full_path, uuid, header.name, header.author, header.icon);
-    cJSON_AddItemToObject(Equals, "Equals", location_filter);
-    cJSON_AddItemToObject(location_filter, "path", cJSON_CreateString("location"));
-    cJSON_AddItemToObject(location_filter, "value", cJSON_CreateString(full_path));
-
-
+    
+    generateChangeRequest(json, full_path, uuid, header.name, header.author, header.icon);
     
 
     const int result = scanner_post_change(json);
-    syslog(LOG_INFO, "ccat error: %d.", result);
+    printf("Indexing json: %s\n", cJSON_Print(json));
+    printf("ccat error: %d\n", result);
+    printf("ccat error: %d.", result);
     //printf("Json: %s\n", cJSON_Print(json));
 
-    /*if (json)
+    if (json)
     {
         cJSON_Delete(json);
-    }*/
+    }
     // Can you believe that cJSON deleting causes issues
     freeScriptHeader(&header);
     free(full_path);
 }
 
 void remove_file(const char* path, const char* filename, char* uuid) {
-    syslog(LOG_INFO, "Removing file: %s/%s", path, filename);
+    printf("Removing file: %s/%s", path, filename);
     printf("Removing file: %s/%s\n", path, filename);
     char* filePath = malloc(strlen(path) + 1 + strlen(filename) + 1);
     sprintf(filePath, "%s/%s", path, filename);
@@ -285,7 +364,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
             }
             escapedPath[escapedPathLength] = '\0';
 
-            syslog(LOG_INFO, "Running remove event");
+            printf("Running remove event");
             const int pid = fork();
             if (pid == 0) {
                 char* command = buildCommand("source \"%s\"; on_remove;", escapedPath);
@@ -309,6 +388,8 @@ void remove_file(const char* path, const char* filename, char* uuid) {
 }
 
 int extractor(const struct scanner_event* event) {
+    printf("Extractor called with event %x\n", event);
+    printf("Extractor called with event type %i\n", event->event_type);
     switch (event->event_type) {
         case SCANNER_ADD:
             index_file(event->path, event->filename);
@@ -323,16 +404,16 @@ int extractor(const struct scanner_event* event) {
         default:
             // Don't run install hooks and such willy-nilly
             //index_file(event->path, event->filename);
-            syslog(LOG_INFO, "Received unknown event: %i", event->event_type);
-            return 0;
+            printf("Received unknown event: %i\n", event->event_type);
+            return 1;
     }
 
     return 0;
 }
 
-__attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
-  openlog("com.notmarek.shell_integration.extractor", LOG_PID, LOG_DAEMON);
-  *handler = extractor;
-  *unk1 = 0;
-  return 0;
+__attribute__((__visibility__("default"))) int load_file_extractor(ScannerEventHandler** handler, int *unk1) {
+    printf("Extractor initialised.\n");
+    *handler = extractor;
+    *unk1 = 0;
+    return 0;
 }
