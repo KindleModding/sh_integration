@@ -10,11 +10,7 @@
 #include <libgen.h>
 #include <limits.h>
 #include "cjson/cJSON.h"
-
 #include "utils.h"
-
-#define __USE_XOPEN_EXTENDED
-#include <ftw.h>
 
 cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string) {
     struct stat st;
