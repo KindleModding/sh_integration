@@ -15,27 +15,20 @@
 pid_t app_pid = -1;
 bool shouldExit = false;
 
-
-LIPCcode stub(LIPC* lipc, const char* property, void* value, void* data) {
-    syslog(LOG_INFO, "Stub called for \"%s\" with value \"%s\"", property, (char*) value);
-    
-    const int segment_length = (strchr(value, ':') - (char*) value);
-    const int response_size = segment_length + strlen(":0:") + 1;
-    char* response = malloc(response_size + 1);
-    strncpy(response, value, segment_length);
-    response[segment_length] = '\0';
-    strcat(response, ":0:");
+LIPCcode stub(LIPC *lipc, const char *property, void *value, void *data) {
+    syslog(LOG_INFO, "Stub called for \"%s\" with value \"%s\"", property,
+           (char *)value);
+    char *id = strtok((char *)value, ":");
+    char *response = malloc(strlen(id) + 3 + 1);
+    snprintf(response, strlen(id) + 3 + 1, "%s:0:", id);
     syslog(LOG_INFO, "Replying with %s", response);
-
-    char* target = malloc(strlen(property) + strlen("result") + 1);
-    target[0] = '\0';
-    strcat(target, property);
-    strcat(target, "result");
+    char *target = malloc(strlen(property) + 6 + 1);
+    snprintf(target, strlen(property) + 6 + 1, "%sresult", property);
+    syslog(LOG_INFO, "Replying with %s, %s", target, response);
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", target, response);
-
-    free(target);
     free(response);
-
+    free(target);
+  
     return LIPC_OK;
 }
 
