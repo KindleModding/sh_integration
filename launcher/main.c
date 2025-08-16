@@ -125,6 +125,9 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         .tv_nsec = UTIME_NOW,
         .tv_sec = UTIME_NOW
     }};
+
+    // Update the item so it is bought to the front
+    LipcSetIntProperty(lipc, "com.lab126.scanner", "doFullScan", 1);
     
     utimensat(0, filePath, time, 0);
     // Run the app on a background thread
