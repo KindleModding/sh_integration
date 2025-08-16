@@ -69,6 +69,7 @@ char* getScriptCommand(char* scriptPath)
 
     struct ScriptHeader header;
     readScriptHeader(file, &header);
+    fclose(file);
 
     char* escapedPath = malloc((strlen(scriptPath) * 2) + 1);
     int escapedPathLength = 0;
