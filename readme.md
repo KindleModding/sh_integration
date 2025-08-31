@@ -1,4 +1,8 @@
-# Kindle epub extractors and more
+# SH_Integration
+SH_Integration v3.0.0
+
+sh_integration is an extractor and launcher which both give the Kindle the ability to run shell scripts directly from the library.  
+For more information see: [The Wiki](https://kindlemodding.org/kindle-dev/scriptlets.html)
 
 # Technical info
   ### The appreg.db

@@ -367,7 +367,7 @@ int extractor(const struct scanner_event* event) {
     return 0;
 }
 
-__attribute__((__visibility__("default"))) int load_file_extractor(ScannerEventHandler** handler, int *unk1) {
+__attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
     printf("Extractor initialised.\n");
     *handler = extractor;
     *unk1 = 0;
