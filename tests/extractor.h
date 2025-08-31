@@ -5,4 +5,4 @@
 #include "scanner.h"
 
 cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string, bool new);
-int load_file_extractor(ScannerEventHandler** handler, int *unk1);
+int load_extractor(ScannerEventHandler** handler, int *unk1);

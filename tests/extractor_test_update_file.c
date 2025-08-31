@@ -41,7 +41,7 @@ int main()
 {
     ScannerEventHandler* handler;
     int unk1;
-    load_file_extractor(&handler, &unk1);    
+    load_extractor(&handler, &unk1);    
 
     assert(unk1 == 0);
 
