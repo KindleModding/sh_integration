@@ -1,6 +1,7 @@
 #include "extractor.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int main()
@@ -9,7 +10,9 @@ int main()
     scanner_gen_uuid(uuid, 37);
     cJSON* changeRequest = cJSON_CreateObject();
     generateChangeRequest(changeRequest, "./tests/test_hooks.sh", uuid, "TestName", "TestAuthor", "TestIcon", false);
-    fprintf(stderr, "Testing Normal\n%s", cJSON_Print(changeRequest));
+    char* printed = cJSON_Print(changeRequest);
+    fprintf(stderr, "Testing Normal\n%s", printed);
+    free(printed);
 
     fprintf(stderr, "Checking uuid...\n");
     assert(strcmp(cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(cJSON_GetArrayItem(cJSON_GetObjectItem(changeRequest, "commands"), 0), "insert"), "uuid")), uuid) == 0);
@@ -25,7 +28,9 @@ int main()
     cJSON_Delete(changeRequest);
     changeRequest = cJSON_CreateObject();
     generateChangeRequest(changeRequest, "./tests/test_hooks.sh", uuid, NULL, "TestAuthor", "TestIcon", false);
-    fprintf(stderr, "Testing NULL name\n%s", cJSON_Print(changeRequest));
+    printed = cJSON_Print(changeRequest);
+    fprintf(stderr, "Testing NULL name\n%s", printed);
+    free(printed);
 
     fprintf(stderr, "Checking uuid...\n");
     assert(strcmp(cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(cJSON_GetArrayItem(cJSON_GetObjectItem(changeRequest, "commands"), 0), "insert"), "uuid")), uuid) == 0);
@@ -41,7 +46,9 @@ int main()
     cJSON_Delete(changeRequest);
     changeRequest = cJSON_CreateObject();
     generateChangeRequest(changeRequest, "./tests/test_hooks.sh", uuid, NULL, NULL, "TestIcon", false);
-    fprintf(stderr, "Testing NULL author\n%s", cJSON_Print(changeRequest));
+    printed = cJSON_Print(changeRequest);
+    fprintf(stderr, "Testing NULL author\n%s", printed);
+    free(printed);
 
     fprintf(stderr, "Checking uuid...\n");
     assert(strcmp(cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(cJSON_GetArrayItem(cJSON_GetObjectItem(changeRequest, "commands"), 0), "insert"), "uuid")), uuid) == 0);
@@ -59,7 +66,9 @@ int main()
     cJSON_Delete(changeRequest);
     changeRequest = cJSON_CreateObject();
     generateChangeRequest(changeRequest, "./tests/test_hooks.sh", uuid, NULL, NULL, NULL, true);
-    fprintf(stderr, "Testing NULL icon\n%s", cJSON_Print(changeRequest));
+    printed = cJSON_Print(changeRequest);
+    fprintf(stderr, "Testing NULL icon\n%s", printed);
+    free(printed);
 
     fprintf(stderr, "Checking uuid...\n");
     assert(strcmp(cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetObjectItem(cJSON_GetArrayItem(cJSON_GetObjectItem(changeRequest, "commands"), 0), "insert"), "uuid")), uuid) == 0);
@@ -73,4 +82,5 @@ int main()
     assert(strcmp(cJSON_GetStringValue(cJSON_GetObjectItem(cJSON_GetArrayItem(cJSON_GetObjectItem(cJSON_GetObjectItem(cJSON_GetArrayItem(cJSON_GetObjectItem(changeRequest, "commands"), 0), "insert"), "titles"), 0), "display")), "test_hooks.sh") == 0);
     fprintf(stderr, "Checking tags...\n");
     assert(strcmp(cJSON_GetStringValue(cJSON_GetArrayItem(cJSON_GetObjectItem(cJSON_GetObjectItem(cJSON_GetArrayItem(cJSON_GetObjectItem(changeRequest, "commands"), 0), "insert"), "displayTags"), 0)), "NEW") == 0);
+    cJSON_Delete(changeRequest);
 }

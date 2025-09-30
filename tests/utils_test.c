@@ -74,4 +74,5 @@ int main()
 
     fprintf(stderr, "Freeing header strings\n");
     freeScriptHeader(&header);
+    free(command);
 }

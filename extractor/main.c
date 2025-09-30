@@ -247,7 +247,7 @@ void index_file(char *path, char* filename, bool new) {
             free(escapedPath);
 
             char* sdrFilePath = malloc(strlen(sdr_path) + strlen("/script.sh") + 1);
-            sprintf(sdrFilePath, "%s/%s", sdr_path, "/script.sh");
+            sprintf(sdrFilePath, "%s/script.sh", sdr_path);
             printf("Writing script to %s\n", sdrFilePath);
             FILE* scriptFile = fopen(full_path, "r");
             FILE* sdrFile = fopen(sdrFilePath, "w");
@@ -275,7 +275,9 @@ void index_file(char *path, char* filename, bool new) {
     
 
     const int result = scanner_post_change(json);
-    printf("Indexing json: %s\n", cJSON_Print(json));
+    char* stringJSON = cJSON_Print(json);
+    printf("Indexing json: %s\n", stringJSON);
+    free(stringJSON);
     printf("ccat error: %d\n", result);
     printf("ccat error: %d.", result);
     //printf("Json: %s\n", cJSON_Print(json));
@@ -326,11 +328,13 @@ void remove_file(const char* path, const char* filename, char* uuid) {
                 char* command = buildCommand("source \"%s\"; on_remove;", escapedPath);
                 free(escapedPath);
                 execl("/var/local/mkk/su", command, NULL);
+                free(command);
             } else {
                 free(escapedPath);
                 waitpid(pid, NULL, 0);
             }
         }
+        freeScriptHeader(&header);
         printf("Removing: %s\n", sdrPath);
     }
 
