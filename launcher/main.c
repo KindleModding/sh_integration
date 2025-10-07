@@ -74,11 +74,11 @@ char* getScriptCommand(char* scriptPath)
     }
     escapedPath[escapedPathLength] = '\0';
 
-    char* command = buildCommand("sh \"%s\"", escapedPath);
+    char* command = buildCommand("sh -l \"%s\"", escapedPath);
 
     if (header.useHooks) { // useHooks script - source it and use `on_run`
         free(command);
-        command = buildCommand("sh -c \"source \\\"%s\\\"; on_run;\"", escapedPath);
+        command = buildCommand("sh -l -c \"source \\\"%s\\\"; on_run;\"", escapedPath);
     }
     if (header.useFBInk) {
         char* old_command = strdup(command);
