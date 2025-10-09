@@ -28,5 +28,6 @@ int main()
     assert(command != NULL);
     printf("test_hooks.sh - %s\n", command);
     assert(strcmp(command, "sh -l -c \"source \\\"./tests/test_hooks.sh\\\"; on_run;\"") == 0);
+    free(command);
     return 0;
 }
