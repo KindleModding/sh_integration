@@ -31,7 +31,6 @@ int main()
     char* command = buildCommand("test %s testing", "hello");
     assert(strcmp(command, "test hello testing") == 0);
 
-    fprintf(stderr, "Creating test.sh\n");
     FILE* file = fopen("./tests/test.sh", "r+");
     assert(file);
 
@@ -51,6 +50,7 @@ int main()
     fclose(file);
     freeScriptHeader(&header);
 
+    fprintf(stderr, "Testing fbink\n");
     FILE* file_fbink = fopen("./tests/test_fbink.sh", "r");
     readScriptHeader(file_fbink, &header);
     assert(!header.useHooks);
@@ -58,6 +58,7 @@ int main()
     fclose(file_fbink);
     freeScriptHeader(&header);
 
+    fprintf(stderr, "Testing fbink+hooks\n");
     FILE* file_hooks_fbink = fopen("./tests/test_hooks_fbink.sh", "r");
     readScriptHeader(file_hooks_fbink, &header);
     assert(header.useHooks);
@@ -65,6 +66,7 @@ int main()
     fclose(file_hooks_fbink);
     freeScriptHeader(&header);
 
+    fprintf(stderr, "Testing hooks\n");
     FILE* file_hooks = fopen("./tests/test_hooks.sh", "r");
     readScriptHeader(file_hooks, &header);
     assert(header.useHooks);
@@ -72,7 +74,26 @@ int main()
     fclose(file_hooks);
     freeScriptHeader(&header);
 
-    fprintf(stderr, "Freeing header strings\n");
+    fprintf(stderr, "Testing noicon\n");
+    FILE* noicon = fopen("./tests/test_noicon.sh", "r");
+    readScriptHeader(noicon, &header);
+    assert(!header.useHooks);
+    assert(header.useFBInk);
+    assert(header.icon == NULL);
+    assert(strcmp(header.name, "test_noicon"));
+    fclose(noicon);
     freeScriptHeader(&header);
+
+    fprintf(stderr, "Testing noheader\n");
+    FILE* noheader = fopen("./tests/test_noheader.sh", "r");
+    readScriptHeader(noheader, &header);
+    assert(!header.useHooks);
+    assert(header.useFBInk);
+    assert(header.author == NULL);
+    assert(header.icon == NULL);
+    assert(header.name == NULL);
+    fclose(noheader);
+    freeScriptHeader(&header);
+
     free(command);
 }

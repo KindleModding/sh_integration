@@ -112,6 +112,11 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
         {
             header->useFBInk = false;
         }
+
+        if (c == EOF)
+        {
+            break;
+        }
     }
     free(buffer);
 };
