@@ -1,8 +1,10 @@
 #include "scanner.h"
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -11,6 +13,16 @@
 #include <limits.h>
 #include "cjson/cJSON.h"
 #include "utils.h"
+
+void Log(const char* format, ...)
+{
+    va_list args;
+    va_start (args, format);
+    vprintf (format, args);
+    printf("\n");
+    vsyslog(LOG_INFO, format, args);
+    va_end (args);
+}
 
 cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string, bool new) {
     struct stat st;
@@ -125,9 +137,8 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
     return json;
 }
 
-typedef cJSON* (ChangeRequestGenerator)(const char* file_path, const char* uuid);
 void index_file(char *path, char* filename, bool new) {
-    printf("Indexing file: %s/%s\n", path, filename);
+    Log("Indexing file: %s/%s\n", path, filename);
 
     char* full_path = malloc(strlen(path) + 1 + strlen(filename) + 1);
     sprintf(full_path, "%s/%s", path, filename);
@@ -135,26 +146,31 @@ void index_file(char *path, char* filename, bool new) {
     // Generate UUID
     char uuid[37] = {0};
     scanner_gen_uuid(uuid, 37);
+    Log("Generated UUID: %s", uuid);
 
     // Read data from file header
     FILE* file = fopen(full_path, "r");
     if (!file) {
+        Log("Failed to open file");
         free(full_path);
         return;
     }
 
+    Log("Reading header.");
     struct ScriptHeader header;
     readScriptHeader(file, &header);
     fclose(file);
 
     bool validIcon = header.icon != NULL && strncmp(header.icon, "data:image", strlen("data:image")) == 0;
     if (validIcon || header.useHooks) {
+        Log("Valid icon OR uses hooks");
         // Create sdr folder
         char* sdr_path = malloc(strlen(full_path) + strlen(".sdr") + 1);
         sprintf(sdr_path, "%s.sdr", full_path);
         mkdir(sdr_path, 0755);
 
         if (validIcon) {
+            Log("Valid icon detected, attempting to extract it");
             //data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAA
             char* fileTypePointer = strchr(header.icon, '/')+1;
             char* fileTypeEndPointer = strchr(header.icon, ';');
@@ -190,7 +206,7 @@ void index_file(char *path, char* filename, bool new) {
                 } else if (header.icon[i] == '/') {
                     value = 63;
                 } else if (header.icon[i] != '=') {
-                    printf("Invalid B64 at position %i", i); // Warn
+                    Log("Invalid B64 at position %i", i); // Warn
                 }
 
                 // Add data to the currentByte
@@ -222,6 +238,7 @@ void index_file(char *path, char* filename, bool new) {
         }
 
         if (header.useHooks) {
+            Log("Script uses hooks!");
             // If the file is functional, run install hook
             char* escapedPath = malloc(strlen(full_path)*2 + 1);
             int escapedPathLength = 0;
@@ -233,28 +250,32 @@ void index_file(char *path, char* filename, bool new) {
             }
             escapedPath[escapedPathLength] = '\0';
 
-            printf("Running install event");
+            Log("Running install event");
             const int pid = fork();
             if (pid == 0) {
+                Log("Hello from fork!");
                 char* command = malloc(escapedPathLength + 32);
                 sprintf(command, "source \"%s\"; on_install;", escapedPath);
-                printf("Executing command: %s", command);
+                Log("Executing command: %s", command);
                 execl("/var/local/mkk/su", "su", "-c", command, NULL);
             } else {
+                Log("Waiting for install to complete...");
                 waitpid(pid, NULL, 0);
+                Log("Done!");
             }
 
             free(escapedPath);
 
             char* sdrFilePath = malloc(strlen(sdr_path) + strlen("/script.sh") + 1);
             sprintf(sdrFilePath, "%s/script.sh", sdr_path);
-            printf("Writing script to %s\n", sdrFilePath);
+            Log("Writing script to %s\n", sdrFilePath);
             FILE* scriptFile = fopen(full_path, "r");
             FILE* sdrFile = fopen(sdrFilePath, "w");
             char c;
             while ((c = getc(scriptFile)) != EOF) {
                 putc(c, sdrFile);
             }
+            Log("Done!");
             fclose(scriptFile);
             fclose(sdrFile);
             free(sdrFilePath);
@@ -276,10 +297,9 @@ void index_file(char *path, char* filename, bool new) {
 
     const int result = scanner_post_change(json);
     char* stringJSON = cJSON_Print(json);
-    printf("Indexing json: %s\n", stringJSON);
+    Log("Indexing json:\n%s\n\n", stringJSON);
     free(stringJSON);
-    printf("ccat error: %d\n", result);
-    printf("ccat error: %d.", result);
+    Log("ccat error: %d\n", result);
     //printf("Json: %s\n", cJSON_Print(json));
 
     if (json)
@@ -292,8 +312,7 @@ void index_file(char *path, char* filename, bool new) {
 }
 
 void remove_file(const char* path, const char* filename, char* uuid) {
-    printf("Removing file: %s/%s", path, filename);
-    printf("Removing file: %s/%s\n", path, filename);
+    Log("Removing file: %s/%s", path, filename);
     char* filePath = malloc(strlen(path) + 1 + strlen(filename) + 1);
     sprintf(filePath, "%s/%s", path, filename);
 
@@ -304,6 +323,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
     char* sdrScriptPath = malloc(strlen(sdrPath) + strlen("/script.sh") + 1);
     sprintf(sdrScriptPath, "%s/script.sh", sdrPath);
     
+    Log("Loading file");
     FILE* file = fopen(sdrScriptPath, "r");
     if (file) {
         struct ScriptHeader header;
@@ -312,6 +332,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
 
         // If the file is uses hooks, run removal hook
         if (header.useHooks) {
+            Log("Script uses hooks!");
             char* escapedPath = malloc(strlen(sdrScriptPath)*2 + 1);
             int escapedPathLength = 0;
             for (int i=0; i < strlen(sdrScriptPath); i++) {
@@ -322,34 +343,40 @@ void remove_file(const char* path, const char* filename, char* uuid) {
             }
             escapedPath[escapedPathLength] = '\0';
 
-            printf("Running remove event");
+            Log("Running remove event");
             const int pid = fork();
             if (pid == 0) {
+                Log("Hello from fork!");
                 char* command = buildCommand("source \"%s\"; on_remove;", escapedPath);
+                Log("Executing command: %s", command);
                 free(escapedPath);
                 execl("/var/local/mkk/su", command, NULL);
                 free(command);
             } else {
+                Log("Hello from parent! Waiting.");
                 free(escapedPath);
                 waitpid(pid, NULL, 0);
+                Log("Wait complete.");
             }
         }
         freeScriptHeader(&header);
-        printf("Removing: %s\n", sdrPath);
+        Log("Removing: %s\n", sdrPath);
     }
 
     if (access(sdrPath, R_OK|W_OK) == F_OK)
     {
+        Log("SDR exists - deleting");
         recursiveDelete(sdrPath);
     }
     
     free(sdrPath);
     free(sdrScriptPath);
+    Log("Removing ccat entry.");
     scanner_delete_ccat_entry(uuid);
 }
 
 int extractor(const struct scanner_event* event) {
-    printf("Extractor called with event type %i\n", event->event_type);
+    Log("Extractor called with event type %i\n", event->event_type);
     switch (event->event_type) {
         case SCANNER_ADD:
             index_file(event->path, event->filename, true);
@@ -364,7 +391,7 @@ int extractor(const struct scanner_event* event) {
         default:
             // Don't run install hooks and such willy-nilly
             //index_file(event->path, event->filename);
-            printf("Received unknown event: %i\n", event->event_type);
+            Log("Received unknown event: %i\n", event->event_type);
             return 1;
     }
 
@@ -372,7 +399,8 @@ int extractor(const struct scanner_event* event) {
 }
 
 __attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
-    printf("Extractor initialised.\n");
+    Log("Extractor initialised.\n");
+    openlog("org.kindlemodding.shell_integration.extractor", LOG_PID, LOG_DAEMON);
     *handler = extractor;
     *unk1 = 0;
     return 0;
