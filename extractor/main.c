@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -17,14 +16,10 @@
 void Log(const char* format, ...)
 {
     va_list args;
-    va_list args2;
     va_start (args, format);
-    va_copy(args2, args);
     vprintf (format, args);
     printf("\n");
-    vsyslog(LOG_INFO, format, args2);
     va_end (args);
-    va_end (args2);
 }
 
 cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string, bool new) {
@@ -409,7 +404,6 @@ int extractor(const struct scanner_event* event) {
 
 __attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
     Log("Extractor initialised.\n");
-    openlog("org.kindlemodding.shell_integration.extractor", LOG_PID, LOG_DAEMON);
     *handler = extractor;
     *unk1 = 0;
     return 0;
