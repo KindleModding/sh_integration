@@ -156,7 +156,7 @@ void index_file(char *path, char* filename, bool new) {
         return;
     }
 
-    Log("Reading header.");
+    Log("Reading header...");
     struct ScriptHeader header;
     readScriptHeader(file, &header);
     fclose(file);
@@ -385,6 +385,7 @@ int extractor(const struct scanner_event* event) {
             remove_file(event->path, event->filename, event->uuid);
             break;
         case SCANNER_UPDATE:
+            Log("Updating file %s/%s", event->path, event->filename);
             remove_file(event->path, event->filename, event->uuid); // Remove SDR and entry
             index_file(event->path, event->filename, false); // Re-index with new metadata and such
             break;

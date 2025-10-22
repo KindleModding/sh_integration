@@ -7,8 +7,8 @@
 int compareFiles(FILE* a, FILE* b)
 {
     int index=-1;
-    char char_a;
-    char char_b;
+    int char_a;
+    int char_b;
     while (true)
     {
         char_a = fgetc(a);

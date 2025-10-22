@@ -74,7 +74,7 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
     for (int i=0; i < 6; i++) {
         buffer[0] = '\0';
         int lineLength = 0;
-        char c;
+        int c;
         while ((c = fgetc(file)) != EOF)
         {
             if (c == '\n' || c == '\r')
@@ -84,13 +84,18 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
 
             if (lineLength + 2 >= bufferSize)
             {
-                buffer = realloc(buffer, bufferSize+=1024);
+                buffer = realloc(buffer, bufferSize+=(lineLength + 2));
+                if (buffer == NULL)
+                {
+                    printf("FATAL - FAILED TO REALLOC BUFFER!!!\n");
+                    return; //@TODO: We don't really have a good way of dealing with this
+                }
             }
 
             buffer[lineLength++] = c;
         }
         buffer[lineLength] = '\0';
-
+        
         // Start reading the header
         if (strncmp(buffer, "# Name: ", strlen("# Name: ")) == 0)
         {
