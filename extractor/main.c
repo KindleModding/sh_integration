@@ -377,6 +377,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
 
 int extractor(const struct scanner_event* event) {
     Log("Extractor called with event type %i\n", event->event_type);
+    Log("\n.event_type=%i\n.filename=%s\n.glob=%s\n.lipchandle=%u\n.path=%s\n.uuid=%s\n\n", event->event_type, event->filename, event->glob, event->lipchandle, event->path, event->uuid);
     switch (event->event_type) {
         case SCANNER_ADD:
             index_file(event->path, event->filename, true);
@@ -388,6 +389,10 @@ int extractor(const struct scanner_event* event) {
             Log("Updating file %s/%s", event->path, event->filename);
             remove_file(event->path, event->filename, event->uuid); // Remove SDR and entry
             index_file(event->path, event->filename, false); // Re-index with new metadata and such
+            break;
+        case SCANNER_ADD_THUMB:
+            break;
+        case SCANNER_UPDATE_THUMB:
             break;
         default:
             // Don't run install hooks and such willy-nilly

@@ -16,7 +16,7 @@ int main()
     scanner_gen_uuid(uuid, 37);
 
     struct scanner_event event = {
-        .event_type = 99,
+        .event_type = 3,
         .path = ".",
         .lipchandle = NULL,
         .filename = "test.sh",
