@@ -17,11 +17,14 @@
 void Log(const char* format, ...)
 {
     va_list args;
+    va_list args2;
     va_start (args, format);
+    va_copy(args2, args);
     vprintf (format, args);
     printf("\n");
-    vsyslog(LOG_INFO, format, args);
+    vsyslog(LOG_INFO, format, args2);
     va_end (args);
+    va_end (args2);
 }
 
 cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string, bool new) {
