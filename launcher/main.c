@@ -15,14 +15,14 @@
 pid_t app_pid = -1;
 bool shouldExit = false;
 
-LIPCcode stub(LIPC *lipc, const char *property, void *value, void *data) {
+LIPCcode stub(LIPC *lipc, const char *property, void *value, void*) {
     syslog(LOG_INFO, "Stub called for \"%s\" with value \"%s\"", property,
            (char *)value);
     char *id = strtok((char *)value, ":");
-    char *response = malloc(strlen(id) + 3 + 1);
+    char *response = (char*) malloc(strlen(id) + 3 + 1);
     snprintf(response, strlen(id) + 3 + 1, "%s:0:", id);
     syslog(LOG_INFO, "Replying with %s", response);
-    char *target = malloc(strlen(property) + 6 + 1);
+    char *target = (char*) malloc(strlen(property) + 6 + 1);
     snprintf(target, strlen(property) + 6 + 1, "%sresult", property);
     syslog(LOG_INFO, "Replying with %s, %s", target, response);
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", target, response);
@@ -64,9 +64,9 @@ char* getScriptCommand(char* scriptPath)
     readScriptHeader(file, &header);
     fclose(file);
 
-    char* escapedPath = malloc((strlen(scriptPath) * 2) + 1);
+    char* escapedPath = (char*) malloc((strlen(scriptPath) * 2) + 1);
     int escapedPathLength = 0;
-    for (int i=0; i < strlen(scriptPath); i++) {
+    for (size_t i=0; i < strlen(scriptPath); i++) {
         if (scriptPath[i] == '"') {
             escapedPath[escapedPathLength++] = '\\';
         }
@@ -93,7 +93,7 @@ char* getScriptCommand(char* scriptPath)
 }
 
 LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) {
-    char* rawFilePath = strchr(value, ':') + 6 + strlen(SERVICE_NAME) + 1;
+    char* rawFilePath = strchr((const char*)value, ':') + 6 + strlen(SERVICE_NAME) + 1;
     char* query = strchr(rawFilePath, '?');
     if (query != NULL) {
         query[0] = 0;

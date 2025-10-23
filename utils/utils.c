@@ -1,10 +1,11 @@
 #include "utils.h"
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
 char* urlDecode(char* raw)
 {
-    char* result = malloc(strlen(raw) + 1); // URLEncoded string will NEVER be longer decoded
+    char* result = (char*) malloc(strlen(raw) + 1); // URLEncoded string will NEVER be longer decoded
     int currentFilepathLen = 0;
 
     for (size_t i=0; i < strlen(raw); i++) {
@@ -19,6 +20,13 @@ char* urlDecode(char* raw)
     return result;
 }
 
+char* buildCommand(const char* command, const char* sub)
+{
+    char* builtCommand = (char*) malloc(strlen(command) + strlen(sub) + 1);
+    sprintf(builtCommand, command, sub);
+    return builtCommand;
+}
+
 void recursiveDelete(char* path)
 {
     DIR* dir = opendir(path);
@@ -29,7 +37,7 @@ void recursiveDelete(char* path)
         {
             continue;
         }
-        char* itemPath = malloc(strlen(path) + 1 + strlen(item->d_name) + 1);
+        char* itemPath = (char*) malloc(strlen(path) + 1 + strlen(item->d_name) + 1);
         sprintf(itemPath, "%s/%s", path, item->d_name);
         if (item->d_type == DT_DIR)
         {
@@ -42,13 +50,6 @@ void recursiveDelete(char* path)
     closedir(dir);
 }
 
-char* buildCommand(char* command, char* sub)
-{
-    char* builtCommand = malloc(strlen(command) + strlen(sub) + 1);
-    sprintf(builtCommand, command, sub);
-    return builtCommand;
-}
-
 void freeScriptHeader(struct ScriptHeader* header)
 {
     free(header->name);
@@ -58,7 +59,7 @@ void freeScriptHeader(struct ScriptHeader* header)
     header->name = NULL;
     header->author = NULL;
     header->icon = NULL;
-};
+}
 
 void readScriptHeader(FILE* file, struct ScriptHeader* header)
 {
@@ -68,12 +69,12 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
     header->useFBInk=true;
     header->useHooks=false;
     
-    int bufferSize = 1024;
-    char* buffer = malloc(bufferSize);
+    size_t bufferSize = 1024;
+    char* buffer = (char*) malloc(bufferSize);
     fseek(file, 0, SEEK_SET);
     for (int i=0; i < 6; i++) {
         buffer[0] = '\0';
-        int lineLength = 0;
+        size_t lineLength = 0;
         int c;
         while ((c = fgetc(file)) != EOF)
         {
@@ -84,7 +85,7 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
 
             if (lineLength + 2 >= bufferSize)
             {
-                buffer = realloc(buffer, bufferSize+=(lineLength + 2));
+                buffer = (char*) realloc(buffer, bufferSize+=(lineLength + 2));
                 if (buffer == NULL)
                 {
                     printf("FATAL - FAILED TO REALLOC BUFFER!!!\n");
@@ -92,7 +93,7 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
                 }
             }
 
-            buffer[lineLength++] = c;
+            buffer[lineLength++] = (char) c;
         }
         buffer[lineLength] = '\0';
         
@@ -124,4 +125,4 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
         }
     }
     free(buffer);
-};
+}

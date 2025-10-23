@@ -190,7 +190,7 @@ void index_file(char *path, char* filename, bool new) {
 
             char currentByte = 0;
             int processedBits = 0;
-            for (int i=(b64Pointer - header.icon); i < strlen(header.icon); i++) {
+            for (size_t i=(b64Pointer - header.icon); i < strlen(header.icon); i++) {
                 // Convert the base64 character to binary
                 char value = 0;
                 if (header.icon[i] >= 'A' && header.icon[i] <= 'Z') {
@@ -240,7 +240,7 @@ void index_file(char *path, char* filename, bool new) {
             // If the file is functional, run install hook
             char* escapedPath = malloc(strlen(full_path)*2 + 1);
             int escapedPathLength = 0;
-            for (int i=0; i < strlen(full_path); i++) {
+            for (size_t i=0; i < strlen(full_path); i++) {
                 if (full_path[i] == '"') {
                     escapedPath[escapedPathLength++] = '\\';
                 }
@@ -269,9 +269,9 @@ void index_file(char *path, char* filename, bool new) {
             Log("Writing script to %s\n", sdrFilePath);
             FILE* scriptFile = fopen(full_path, "r");
             FILE* sdrFile = fopen(sdrFilePath, "w");
-            char c;
-            while ((c = getc(scriptFile)) != EOF) {
-                putc(c, sdrFile);
+            int c;
+            while ((c = fgetc(scriptFile)) != EOF) {
+                fputc(c, sdrFile);
             }
             Log("Done!");
             fclose(scriptFile);
@@ -333,7 +333,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
             Log("Script uses hooks!");
             char* escapedPath = malloc(strlen(sdrScriptPath)*2 + 1);
             int escapedPathLength = 0;
-            for (int i=0; i < strlen(sdrScriptPath); i++) {
+            for (size_t i=0; i < strlen(sdrScriptPath); i++) {
                 if (sdrScriptPath[i] == '"') {
                     escapedPath[escapedPathLength++] = '\\';
                 }
