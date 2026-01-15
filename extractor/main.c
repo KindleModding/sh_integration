@@ -65,7 +65,7 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
     }
     else
     {
-        cJSON* percentFinished = cJSON_CreateNumber(1337);
+        cJSON* percentFinished = cJSON_CreateNumber(0);
         cJSON_AddItemToObject(insert, "percentFinished", percentFinished);
     }
 
