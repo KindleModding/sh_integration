@@ -19,6 +19,7 @@ jobs:
           meson setup builddir
           meson test -C builddir
     - uses: actions/upload-artifact@v4
+      continue-on-error: true
       with:
         name: sh_integration-tests_logs
         path: builddir/meson-logs
