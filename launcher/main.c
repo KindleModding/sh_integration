@@ -196,10 +196,14 @@ int main(void) {
             app_pid = -1; // So we know the program has quit
 
             Log("Exiting");
-            // Calls unload - gracefully exits
-            char* value;
-            LipcGetStringProperty(lipc, "com.lab126.appmgrd", "popAppHistory", &value);
-            LipcFreeString(value);
+            
+            #ifdef ARCH_ARMHF
+                char* value;
+                LipcGetStringProperty(lipc, "com.lab126.appmgrd", "popAppHistory", &value);
+                LipcFreeString(value);
+            #else
+                LipcSetStringProperty(lipc, "com.lab126.appmgrd", "start", "app://com.lab126.booklet.home");
+            #endif
         }
     }
 
