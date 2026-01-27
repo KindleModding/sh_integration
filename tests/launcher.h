@@ -3,7 +3,6 @@
 #include "openlipc.h"
 #include "unistd.h"
 #include <sys/stat.h>
-#include <sys/syslog.h>
 #include <sys/wait.h>
 #include <stdbool.h>
 #include "utils.h"

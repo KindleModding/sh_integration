@@ -20,7 +20,7 @@ char* urlDecode(char* raw)
     return result;
 }
 
-char* buildCommand(const char* command, const char* sub)
+inline char* buildCommand(const char* command, const char* sub)
 {
     char* builtCommand = (char*) malloc(strlen(command) + strlen(sub) + 1);
     sprintf(builtCommand, command, sub);

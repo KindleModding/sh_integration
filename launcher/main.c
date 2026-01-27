@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/syslog.h>
 #include <sys/wait.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -12,19 +11,30 @@
 
 #define SERVICE_NAME "com.notmarek.shell_integration.launcher"
 
+void Log(const char* format, ...)
+{
+    va_list args;
+    va_start (args, format);
+    vprintf (format, args);
+    printf("\n");
+    va_end (args);
+}
+
 pid_t app_pid = -1;
 bool shouldExit = false;
 
 LIPCcode stub(LIPC *lipc, const char *property, void *value, void*) {
-    syslog(LOG_INFO, "Stub called for \"%s\" with value \"%s\"", property,
+    Log("Stub called for \"%s\" with value \"%s\"", property,
            (char *)value);
     char *id = strtok((char *)value, ":");
-    char *response = (char*) malloc(strlen(id) + 3 + 1);
-    snprintf(response, strlen(id) + 3 + 1, "%s:0:", id);
-    syslog(LOG_INFO, "Replying with %s", response);
-    char *target = (char*) malloc(strlen(property) + 6 + 1);
-    snprintf(target, strlen(property) + 6 + 1, "%sresult", property);
-    syslog(LOG_INFO, "Replying with %s, %s", target, response);
+    int bufSize = snprintf(NULL, 0, "%s:0:", id);
+    char *response = (char*) malloc((unsigned long) bufSize);
+    snprintf(response, (unsigned long) bufSize, "%s:0:", id);
+    Log("Replying with %s", response);
+    bufSize = snprintf(NULL, 0, "%sresult", property);
+    char *target = (char*) malloc((unsigned long) bufSize);
+    snprintf(target, (unsigned long) bufSize, "%sresult", property);
+    Log("Replying with %s, %s", target, response);
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", target, response);
     free(response);
     free(target);
@@ -37,13 +47,13 @@ LIPCcode pause_callback(LIPC* lipc, const char* property, void* value, void* dat
 }
 
 LIPCcode unload_callback(LIPC* lipc, const char* property, void* value, void* data) {
-    syslog(LOG_INFO, "Unloading shell integration launcher");
+    Log("Unloading shell integration launcher");
     
     // Kill the app if it's running
     if (app_pid > 0) {
         char command[48];
         sprintf(command, "/var/local/mkk/su -c \"kill -9 %i\"", app_pid);
-        syslog(LOG_INFO, "Killing with: %s", command);
+        Log("Killing with: %s", command);
         system(command);
     }
     
@@ -99,7 +109,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         query[0] = 0;
     }
 
-    syslog(LOG_INFO, "Raw path: \"%s\"", rawFilePath);
+    Log("Raw path: \"%s\"", rawFilePath);
 
     // Parse the filePath as it is urlencoded
     char* filePath = urlDecode(rawFilePath);
@@ -110,7 +120,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         return stub(lipc, property, value, data);
     }
 
-    syslog(LOG_INFO, "Invoking app using \"%s\"", command);
+    Log("Invoking app using \"%s\"", command);
     struct timespec time[2] = {{
         .tv_nsec = UTIME_NOW,
         .tv_sec = UTIME_NOW
@@ -125,7 +135,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     utimensat(0, filePath, time, 0);
     // Run the app on a background thread
     app_pid = fork();
-    syslog(LOG_INFO, "Our app PID \"%d\"", app_pid);
+    Log("Our app PID \"%d\"", app_pid);
     if (app_pid == 0) {
         // we are running as framework call gandalf for help
         execl("/var/local/mkk/su", "su", "-c", command, NULL); // su is first arg bc it expects to be run from a shell ($1 = name of command, duh)
@@ -138,8 +148,6 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
 
 #ifndef LAUNCHER_TESTING
 int main(void) {
-    openlog(SERVICE_NAME, LOG_PID, LOG_DAEMON);
-
     LIPCcode code;
     LIPC* lipc = LipcOpenEx(SERVICE_NAME, &code);
     if (code != LIPC_OK)
@@ -167,7 +175,7 @@ int main(void) {
         }
     }
 
-    syslog(LOG_INFO, "Running exit routine with PID: %d", app_pid);
+    Log("Running exit routine with PID: %d", app_pid);
     LipcClose(lipc);
     return 0;
 }
