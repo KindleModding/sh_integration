@@ -77,3 +77,6 @@ test('Test Launcher Stub', launcher_test_stub, is_parallel: false)
 
 launcher_test_go_callback = executable('launcher_test_go_callback', ['launcher_test_go_callback.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
 test('Test Launcher Go Callback', launcher_test_go_callback, is_parallel: false)
+
+launcher_test_unload_callback = executable('launcher_test_unload_callback', ['launcher_test_unload_callback.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
+test('Test Launcher Unload Callback', launcher_test_unload_callback, is_parallel: false)

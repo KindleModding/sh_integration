@@ -13,3 +13,4 @@ LIPCcode stub(LIPC* lipc, const char* property, void* value, void* data);
 LIPCcode pause_callback(LIPC* lipc, const char* property, void* value, void* data);
 char* getScriptCommand(char* scriptPath);
 LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data);
+LIPCcode unload_callback(LIPC* lipc, const char* property, void* value, void* data);
