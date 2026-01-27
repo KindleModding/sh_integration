@@ -3,11 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/syslog.h>
 #include <sys/wait.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
 #include "utils.h"
+#include <syslog.h>
 
 #define SERVICE_NAME "com.notmarek.shell_integration.launcher"
 
@@ -15,10 +17,18 @@ void Log(const char* format, ...)
 {
     va_list args;
     va_start (args, format);
-    vprintf (format, args);
-    printf("\n");
+    va_list args2;
+    va_copy (args2, args);
+    int size = vsnprintf (NULL, 0, format, args);
+    char* buffer = malloc((unsigned long) size);
+    vsnprintf (buffer, (unsigned long) size, format, args2);
+    printf("%s\n", buffer);
+    syslog(LOG_INFO, buffer);
+    free(buffer);
     va_end (args);
+    va_end (args2);
 }
+
 
 pid_t app_pid = -1;
 bool shouldExit = false;
@@ -151,6 +161,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
 
 #ifndef LAUNCHER_TESTING
 int main(void) {
+    openlog(SERVICE_NAME, LOG_CONS|LOG_NDELAY|LOG_PID, LOG_USER);
     LIPCcode code;
     LIPC* lipc = LipcOpenEx(SERVICE_NAME, &code);
     if (code != LIPC_OK)
@@ -180,6 +191,7 @@ int main(void) {
 
     Log("Running exit routine with PID: %d", app_pid);
     LipcClose(lipc);
+    closelog();
     return 0;
 }
 #endif
