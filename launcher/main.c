@@ -59,7 +59,7 @@ LIPCcode pause_callback(LIPC* lipc, const char* property, void* value, void* dat
 }
 
 LIPCcode unload_callback(LIPC* lipc, const char* property, void* value, void* data) {
-    Log("Unloading shell integration launcher");
+    Log("unload_callback");
     
     // Kill the app if it's running
     if (app_pid > 0) {
@@ -77,15 +77,18 @@ LIPCcode unload_callback(LIPC* lipc, const char* property, void* value, void* da
 
 char* getScriptCommand(char* scriptPath)
 {
+    Log("Loading script file");
     FILE* file = fopen(scriptPath, "r");
     if (!file) {
         return NULL;
     }
 
+    Log("Reading header");
     struct ScriptHeader header;
     readScriptHeader(file, &header);
     fclose(file);
 
+    Log("Escaping path");
     char* escapedPath = (char*) malloc((strlen(scriptPath) * 2) + 1);
     int escapedPathLength = 0;
     for (size_t i=0; i < strlen(scriptPath); i++) {
@@ -96,25 +99,30 @@ char* getScriptCommand(char* scriptPath)
     }
     escapedPath[escapedPathLength] = '\0';
 
+    Log("Building command");
     char* command = buildCommand("sh -l \"%s\"", escapedPath);
 
     if (header.useHooks) { // useHooks script - source it and use `on_run`
+        Log("Script uses hooks!");
         free(command);
         command = buildCommand("sh -l -c \"source \\\"%s\\\"; on_run;\"", escapedPath);
     }
     if (header.useFBInk) {
+        Log("Script uses FBInk!");
         char* old_command = strdup(command);
         free(command);
         command = buildCommand("/mnt/us/libkh/bin/fbink -k; %s 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r", old_command);
         free(old_command);
     }
 
+    Log("Finished generating command.");
     freeScriptHeader(&header);
     free(escapedPath);
     return command;
 }
 
 LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) {
+    Log("go_callback");
     char* rawFilePath = strchr((const char*)value, ':') + 6 + strlen(SERVICE_NAME) + 1;
     char* query = strchr(rawFilePath, '?');
     if (query != NULL) {
@@ -129,11 +137,11 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     char* command = getScriptCommand(filePath);
     if (command == NULL)
     {
+        Log("Could not get script command!");
         free(filePath);
         return stub(lipc, property, value, data);
     }
 
-    Log("Invoking app using \"%s\"", command);
     struct timespec time[2] = {{
         .tv_nsec = UTIME_NOW,
         .tv_sec = UTIME_NOW
@@ -146,6 +154,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     LipcSetIntProperty(lipc, "com.lab126.scanner", "doFullScan", 1);
     
     utimensat(0, filePath, time, 0);
+    Log("Invoking app using \"%s\"", command);
     // Run the app on a background thread
     app_pid = fork();
     Log("Our app PID \"%d\"", app_pid);
@@ -162,26 +171,31 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
 #ifndef LAUNCHER_TESTING
 int main(void) {
     openlog(SERVICE_NAME, LOG_CONS|LOG_NDELAY|LOG_PID, LOG_USER);
+    Log("SH_INTEGRATION LAUNCHER START!");
     LIPCcode code;
     LIPC* lipc = LipcOpenEx(SERVICE_NAME, &code);
     if (code != LIPC_OK)
         return 1;
-
+    
+    Log("Registering properties");
     LipcRegisterStringProperty(lipc, "load", NULL, stub, NULL);
     LipcRegisterStringProperty(lipc, "unload", NULL, unload_callback, NULL);
     LipcRegisterStringProperty(lipc, "pause", NULL, pause_callback, NULL);
     LipcRegisterStringProperty(lipc, "go", NULL, go_callback, NULL);
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", "runresult",  "0:" SERVICE_NAME);
 
+    Log("Waiting to exit...");
     while (!shouldExit) {
         sleep(1);
 
         if (app_pid > 0) { // This is the parent process AND we have spwned the child
+            Log("Child spawned, waiting to quit");
             // Wait for child process to quit
             waitpid(app_pid, NULL, 0);
 
             app_pid = -1; // So we know the program has quit
 
+            Log("Exiting");
             // Calls unload - gracefully exits
             char* value;
             LipcGetStringProperty(lipc, "com.lab126.appmgrd", "popAppHistory", &value);
