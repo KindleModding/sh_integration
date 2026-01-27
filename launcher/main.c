@@ -19,7 +19,7 @@ void Log(const char* format, ...)
     va_start (args, format);
     va_list args2;
     va_copy (args2, args);
-    int size = vsnprintf (NULL, 0, format, args);
+    int size = vsnprintf (NULL, 0, format, args) + 1;
     char* buffer = malloc((unsigned long) size);
     vsnprintf (buffer, (unsigned long) size, format, args2);
     printf("%s\n", buffer);
@@ -38,11 +38,11 @@ LIPCcode stub(LIPC *lipc, const char *property, void *value, void*) {
            (char *)value);
     char* mutValue = strdup(value);
     char *id = strtok((char *)mutValue, ":");
-    int bufSize = snprintf(NULL, 0, "%s:0:", id);
-    char *response = (char*) malloc((unsigned long) bufSize);
+    int bufSize = snprintf(NULL, 0, "%s:0:", id) + 1;
+    char *response = (char*) malloc((unsigned long) bufSize + 1);
     snprintf(response, (unsigned long) bufSize, "%s:0:", id);
     Log("Replying with %s", response);
-    bufSize = snprintf(NULL, 0, "%sresult", property);
+    bufSize = snprintf(NULL, 0, "%sresult", property) + 1;
     char *target = (char*) malloc((unsigned long) bufSize);
     snprintf(target, (unsigned long) bufSize, "%sresult", property);
     Log("Replying with %s, %s", target, response);
