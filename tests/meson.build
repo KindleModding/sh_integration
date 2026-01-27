@@ -72,6 +72,8 @@ test('Test Extractor Edge Cases', extractor_test_edgecases, is_parallel : false)
 launcher_test_generate_command = executable('launcher_test_generate_command', ['launcher_test_generate_command.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
 test('Test Launcher Generate Command', launcher_test_generate_command, is_parallel: false)
 
-
 launcher_test_stub = executable('launcher_test_stub', ['launcher_test_stub.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
 test('Test Launcher Stub', launcher_test_stub, is_parallel: false)
+
+launcher_test_go_callback = executable('launcher_test_go_callback', ['launcher_test_go_callback.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
+test('Test Launcher Go Callback', launcher_test_go_callback, is_parallel: false)

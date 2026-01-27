@@ -26,7 +26,8 @@ bool shouldExit = false;
 LIPCcode stub(LIPC *lipc, const char *property, void *value, void*) {
     Log("Stub called for \"%s\" with value \"%s\"", property,
            (char *)value);
-    char *id = strtok((char *)value, ":");
+    char* mutValue = strdup(value);
+    char *id = strtok((char *)mutValue, ":");
     int bufSize = snprintf(NULL, 0, "%s:0:", id);
     char *response = (char*) malloc((unsigned long) bufSize);
     snprintf(response, (unsigned long) bufSize, "%s:0:", id);
@@ -38,6 +39,7 @@ LIPCcode stub(LIPC *lipc, const char *property, void *value, void*) {
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", target, response);
     free(response);
     free(target);
+    free(mutValue);
   
     return LIPC_OK;
 }
@@ -117,6 +119,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     char* command = getScriptCommand(filePath);
     if (command == NULL)
     {
+        free(filePath);
         return stub(lipc, property, value, data);
     }
 
