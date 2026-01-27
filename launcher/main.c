@@ -198,10 +198,12 @@ int main(void) {
             Log("Exiting");
             
             #ifdef ARCH_ARMHF
+                Log("Using armhf graceful exit strategy!");
                 char* value;
                 LipcGetStringProperty(lipc, "com.lab126.appmgrd", "popAppHistory", &value);
                 LipcFreeString(value);
             #else
+                Log("Using armel graceful exit strategy!");
                 LipcSetStringProperty(lipc, "com.lab126.appmgrd", "start", "app://com.lab126.booklet.home");
             #endif
         }
