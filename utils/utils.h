@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+int hexDecode(char c);
 char* urlDecode(char* raw);
 void strip(char** string);
 

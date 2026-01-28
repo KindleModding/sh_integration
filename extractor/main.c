@@ -178,7 +178,7 @@ void index_file(char *path, char* filename, bool new) {
         sprintf(sdr_path, "%s.sdr", full_path);
         mkdir(sdr_path, 0755);
 
-        if (validIcon && strncmp(header.icon, "data:image", strlen("data:image"))) {
+        if (validIcon && strncmp(header.icon, "data:image", strlen("data:image")) == 0) {
             Log("Valid BASE64 icon detected, attempting to extract it");
             //data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAA
             char* fileTypePointer = strchr(header.icon, '/')+1;

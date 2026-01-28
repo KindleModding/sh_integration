@@ -4,6 +4,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+int hexDecode(char c)
+{
+    if (c >= '0' && c <= '9')
+    {
+        return c - '0';
+    }
+    else if (c >= 'a' && c <= 'z')
+    {
+        return c - 'a' + 10;
+    }
+    else if (c >= 'A' && c <= 'Z')
+    {
+        return c - 'A' + 10;
+    }
+    return 0;
+}
+
 char* urlDecode(char* raw)
 {
     char* result = (char*) malloc(strlen(raw) + 1); // URLEncoded string will NEVER be longer decoded
@@ -11,7 +28,7 @@ char* urlDecode(char* raw)
 
     for (size_t i=0; i < strlen(raw); i++) {
         if (raw[i] == '%') {
-            result[currentFilepathLen++] = (char)(((raw[i+1] - '0') << 4) + (raw[i+2] - '0'));
+            result[currentFilepathLen++] = (char)((hexDecode(raw[i+1]) << 4) + hexDecode(raw[i+2]));
             i += 2;
         } else {
             result[currentFilepathLen++] = raw[i];
@@ -33,7 +50,7 @@ void strip(char** string)
     *string = finalString;
 }
 
-inline char* buildCommand(const char* command, const char* sub)
+char* buildCommand(const char* command, const char* sub)
 {
     char* builtCommand = (char*) malloc(strlen(command) + strlen(sub) + 1);
     sprintf(builtCommand, command, sub);

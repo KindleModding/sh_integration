@@ -20,10 +20,10 @@ void Log(const char* format, ...)
     va_list args2;
     va_copy (args2, args);
     int size = vsnprintf (NULL, 0, format, args) + 1;
-    char* buffer = malloc((unsigned long) size);
+    char* buffer = (char*) malloc((unsigned long) size);
     vsnprintf (buffer, (unsigned long) size, format, args2);
     printf("%s\n", buffer);
-    syslog(LOG_INFO, buffer);
+    syslog(LOG_INFO, "%s", buffer);
     free(buffer);
     va_end (args);
     va_end (args2);
@@ -133,6 +133,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
 
     // Parse the filePath as it is urlencoded
     char* filePath = urlDecode(rawFilePath);
+    Log("Decoded path: \"%s\"", filePath);
     
     char* command = getScriptCommand(filePath);
     if (command == NULL)
