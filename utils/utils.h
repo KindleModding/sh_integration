@@ -8,6 +8,7 @@
 #include <string.h>
 
 char* urlDecode(char* raw);
+void strip(char** string);
 
 void recursiveDelete(char* path);
 

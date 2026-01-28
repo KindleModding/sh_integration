@@ -159,7 +159,18 @@ void index_file(char *path, char* filename, bool new) {
     readScriptHeader(file, &header);
     fclose(file);
 
-    bool validIcon = header.icon != NULL && strncmp(header.icon, "data:image", strlen("data:image")) == 0;
+    bool validIcon = false;
+    if (header.icon != NULL)
+    {
+        if (strncmp(header.icon, "data:image", strlen("data:image")) == 0)
+        {
+            validIcon = true;
+        }
+        if (access(header.icon, R_OK|W_OK) == F_OK)
+        {
+            validIcon = true;
+        }
+    }
     if (validIcon || header.useHooks) {
         Log("Valid icon OR uses hooks");
         // Create sdr folder

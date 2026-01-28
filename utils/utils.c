@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <ctype.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,18 @@ char* urlDecode(char* raw)
     }
     result[currentFilepathLen] = '\0';
     return result;
+}
+
+void strip(char** string)
+{
+    char* strippedString = *string;
+    while (isspace(*strippedString)) { (strippedString)++; };
+    char* back = strippedString + strlen(strippedString);
+    while(back > strippedString && isspace(*(--back))) { printf("Back: [%c]\n", *back); *back = '\0'; };
+    
+    char* finalString = strdup(strippedString);
+    free(*string);
+    *string = finalString;
 }
 
 inline char* buildCommand(const char* command, const char* sub)
@@ -101,14 +114,32 @@ void readScriptHeader(FILE* file, struct ScriptHeader* header)
         if (strncmp(buffer, "# Name: ", strlen("# Name: ")) == 0)
         {
             header->name = strdup(buffer + strlen("# Name: "));
+            strip(&header->name);
+            if (strlen(header->name) == 0)
+            {
+                free(header->name);
+                header->name = NULL;
+            }
         }
         else if (strncmp(buffer, "# Author: ", strlen("# Author: ")) == 0)
         {
             header->author = strdup(buffer + strlen("# Author: "));
+            strip(&header->author);
+            if (strlen(header->author) == 0)
+            {
+                free(header->author);
+                header->author = NULL;
+            }
         }
         else if (strncmp(buffer, "# Icon: ", strlen("# Icon: ")) == 0)
         {
             header->icon = strdup(buffer + strlen("# Icon: "));
+            strip(&header->icon);
+            if (strlen(header->icon) == 0)
+            {
+                free(header->icon);
+                header->icon = NULL;
+            }
         }
         else if (strncmp(buffer, "# UseHooks", strlen("# UseHooks")) == 0)
         {

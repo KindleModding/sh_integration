@@ -44,6 +44,12 @@ configure_file(
   copy: true
 )
 
+configure_file(
+  input: 'Check OTA status v1.1.sh',
+  output: 'Check OTA status v1.1.sh',
+  copy: true
+)
+
 utils_test = executable('utils_test', ['utils_test.c', '../utils/utils.c'], include_directories: ['../utils', '.'])
 test('Test Utils', utils_test, is_parallel : false)
 
@@ -80,3 +86,6 @@ test('Test Launcher Go Callback', launcher_test_go_callback, is_parallel: false)
 
 launcher_test_unload_callback = executable('launcher_test_unload_callback', ['launcher_test_unload_callback.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
 test('Test Launcher Unload Callback', launcher_test_unload_callback, is_parallel: false)
+
+launcher_test_edgecases = executable('launcher_test_edgecases', ['launcher_test_edgecases.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
+test('Test Launcher Edge Cases', launcher_test_edgecases, is_parallel: false)
