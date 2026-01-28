@@ -1,4 +1,4 @@
-project('sh_integration', 'c', version : '3.1.0', default_options: ['warning_level=everything'])
+project('sh_integration', 'c', version : '3.2.0', default_options: ['warning_level=everything'])
 
 arch = meson.get_external_property('arch', 'armhf')
 if arch == 'armhf'
