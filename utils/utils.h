@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-char* asprintf_hd(char * format, ...) __attribute__((format(printf, 1, 2)));
+char* asprintf_hd(const char * format, ...) __attribute__((format(printf, 1, 2)));
 
 int hexDecode(char c);
 char* urlDecode(char* raw);
