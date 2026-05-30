@@ -74,8 +74,7 @@ void strip(char** string)
 
 char* buildCommand(const char* command, const char* sub)
 {
-    char* builtCommand;
-    asprintf(&builtCommand, command, sub);
+    char* builtCommand = asprintf_hd(command, sub);
     return builtCommand;
 }
 
@@ -89,8 +88,7 @@ void recursiveDelete(char* path)
         {
             continue;
         }
-        char* itemPath;
-        asprintf(&itemPath, "%s/%s", path, item->d_name);
+        char* itemPath = asprintf_hd("%s/%s", path, item->d_name);
         if (item->d_type == DT_DIR)
         {
             recursiveDelete(itemPath);

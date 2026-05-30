@@ -19,8 +19,7 @@ void Log(const char* format, ...)
     va_start (args, format);
     va_list args2;
     va_copy (args2, args);
-    char* buffer;
-    vasprintf(&buffer, format, args2);
+    char* buffer = asprintf_hd(format, args2);
     printf("%s\n", buffer);
     syslog(LOG_INFO, "%s", buffer);
     free(buffer);
@@ -37,11 +36,9 @@ LIPCcode stub(LIPC *lipc, const char *property, void *value, void*) {
            (char *)value);
     char* mutValue = strdup(value);
     char *id = strtok((char *)mutValue, ":");
-    char *response;
-    asprintf(&response, "%s:0:", id);
+    char *response = asprintf_hd("%s:0:", id);
     Log("Replying with %s", response);
-    char *target;
-    asprintf(&target, "%sresult", property);
+    char *target = asprintf_hd("%sresult", property);
     Log("Replying with %s, %s", target, response);
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", target, response);
     free(response);
@@ -60,8 +57,7 @@ LIPCcode unload_callback(LIPC* lipc, const char* property, void* value, void* da
     
     // Kill the app if it's running
     if (app_pid > 0) {
-        char* command;
-        asprintf(&command, "/var/local/mkk/su -c \"kill -9 %i\"", app_pid);
+        char* command = asprintf_hd("/var/local/mkk/su -c \"kill -9 %i\"", app_pid);
         Log("Killing with: %s", command);
         system(command);
         free(command);

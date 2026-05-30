@@ -138,8 +138,7 @@ cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name
 void index_file(char *path, char* filename, bool new) {
     Log("Indexing file: %s/%s\n", path, filename);
 
-    char* full_path;
-    asprintf(&full_path, "%s/%s", path, filename);
+    char* full_path = asprintf_hd("%s/%s", path, filename);
 
     // Generate UUID
     char uuid[37] = {0};
@@ -174,8 +173,7 @@ void index_file(char *path, char* filename, bool new) {
     if (validIcon || header.useHooks) {
         Log("Valid icon OR uses hooks");
         // Create sdr folder
-        char* sdr_path;
-        asprintf(&sdr_path, "%s.sdr", full_path);
+        char* sdr_path = asprintf_hd("%s.sdr", full_path);
         mkdir(sdr_path, 0755);
 
         if (validIcon && strncmp(header.icon, "data:image", strlen("data:image")) == 0) {
@@ -193,8 +191,7 @@ void index_file(char *path, char* filename, bool new) {
             strncpy(fileType, fileTypePointer, fileTypeEndPointer - fileTypePointer);
             fileType[fileTypeEndPointer - fileTypePointer] = '\0';
 
-            char* icon_sdr_path;
-            asprintf(&icon_sdr_path, "%s/icon.%s", sdr_path, fileType);
+            char* icon_sdr_path = asprintf_hd( "%s/icon.%s", sdr_path, fileType);
 
             // Parse the base64
             FILE* file = fopen(icon_sdr_path, "wb");
@@ -263,8 +260,7 @@ void index_file(char *path, char* filename, bool new) {
             const int pid = fork();
             if (pid == 0) {
                 Log("Hello from fork!");
-                char* command;
-                asprintf(&command, "source \"%s\"; on_install;", escapedPath);
+                char* command = asprintf_hd("source \"%s\"; on_install;", escapedPath);
                 Log("Executing command: %s", command);
                 execl("/var/local/mkk/su", "su", "-c", command, NULL);
             } else {
@@ -275,8 +271,7 @@ void index_file(char *path, char* filename, bool new) {
 
             free(escapedPath);
 
-            char* sdrFilePath;
-            asprintf(&sdrFilePath, "%s/script.sh", sdr_path);
+            char* sdrFilePath = asprintf_hd("%s/script.sh", sdr_path);
             Log("Writing script to %s\n", sdrFilePath);
             FILE* scriptFile = fopen(full_path, "r");
             FILE* sdrFile = fopen(sdrFilePath, "w");
@@ -322,15 +317,12 @@ void index_file(char *path, char* filename, bool new) {
 
 void remove_file(const char* path, const char* filename, char* uuid) {
     Log("Removing file: %s/%s", path, filename);
-    char* filePath;
-    asprintf(&filePath, "%s/%s", path, filename);
+    char* filePath = asprintf_hd("%s/%s", path, filename);
 
-    char* sdrPath;
-    asprintf(&sdrPath, "%s.sdr", filePath);
+    char* sdrPath = asprintf_hd("%s.sdr", filePath);
     free(filePath);
     
-    char* sdrScriptPath;
-    asprintf(&sdrScriptPath, "%s/script.sh", sdrPath);
+    char* sdrScriptPath = asprintf_hd("%s/script.sh", sdrPath);
     
     Log("Loading file");
     FILE* file = fopen(sdrScriptPath, "r");
