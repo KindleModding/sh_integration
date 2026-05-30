@@ -1,8 +1,30 @@
 #include "utils.h"
 #include <ctype.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+
+/**
+ * @brief asprintf implementation
+ * 
+ * @param format 
+ * @param ... 
+ * @return char* 
+ */
+char* asprintf_hd(char * format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    va_list args2;
+    va_copy (args2, args);
+    size_t size = (size_t) vsnprintf(NULL, 0, format, args) + 1;
+    char* str = (char*)malloc(size);
+    vsnprintf(str, size, format, args2);
+    va_end(args);
+    va_end(args2);
+    return str;
+}
 
 int hexDecode(char c)
 {

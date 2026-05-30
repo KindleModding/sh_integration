@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <stdlib.h>
-#include <string.h>
+
+char* asprintf_hd(char * format, ...) __attribute__((format(printf, 1, 2)));
 
 int hexDecode(char c);
 char* urlDecode(char* raw);
