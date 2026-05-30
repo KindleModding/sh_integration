@@ -52,8 +52,8 @@ void strip(char** string)
 
 char* buildCommand(const char* command, const char* sub)
 {
-    char* builtCommand = (char*) malloc(strlen(command) + strlen(sub) + 1);
-    sprintf(builtCommand, command, sub);
+    char* builtCommand;
+    asprintf(&builtCommand, command, sub);
     return builtCommand;
 }
 
@@ -67,8 +67,8 @@ void recursiveDelete(char* path)
         {
             continue;
         }
-        char* itemPath = (char*) malloc(strlen(path) + 1 + strlen(item->d_name) + 1);
-        sprintf(itemPath, "%s/%s", path, item->d_name);
+        char* itemPath;
+        asprintf(&itemPath, "%s/%s", path, item->d_name);
         if (item->d_type == DT_DIR)
         {
             recursiveDelete(itemPath);

@@ -6,7 +6,7 @@ if arch == 'armhf'
 endif
 
 # Fetch our dependencies
-subproject('cjson', default_options: ['default_library=static']).get_variable('libcjson_dep')
+subproject('cjson', default_options: ['default_library=static', 'tests=false']).get_variable('libcjson_dep')
 cjson_dep = dependency('libcjson')
 
 subdir('./stubs')

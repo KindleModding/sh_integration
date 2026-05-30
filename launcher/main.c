@@ -19,9 +19,8 @@ void Log(const char* format, ...)
     va_start (args, format);
     va_list args2;
     va_copy (args2, args);
-    int size = vsnprintf (NULL, 0, format, args) + 1;
-    char* buffer = (char*) malloc((unsigned long) size);
-    vsnprintf (buffer, (unsigned long) size, format, args2);
+    char* buffer;
+    vasprintf(&buffer, format, args2);
     printf("%s\n", buffer);
     syslog(LOG_INFO, "%s", buffer);
     free(buffer);
@@ -38,13 +37,11 @@ LIPCcode stub(LIPC *lipc, const char *property, void *value, void*) {
            (char *)value);
     char* mutValue = strdup(value);
     char *id = strtok((char *)mutValue, ":");
-    int bufSize = snprintf(NULL, 0, "%s:0:", id) + 1;
-    char *response = (char*) malloc((unsigned long) bufSize + 1);
-    snprintf(response, (unsigned long) bufSize, "%s:0:", id);
+    char *response;
+    asprintf(&response, "%s:0:", id);
     Log("Replying with %s", response);
-    bufSize = snprintf(NULL, 0, "%sresult", property) + 1;
-    char *target = (char*) malloc((unsigned long) bufSize);
-    snprintf(target, (unsigned long) bufSize, "%sresult", property);
+    char *target;
+    asprintf(&target, "%sresult", property);
     Log("Replying with %s, %s", target, response);
     LipcSetStringProperty(lipc, "com.lab126.appmgrd", target, response);
     free(response);
@@ -63,10 +60,11 @@ LIPCcode unload_callback(LIPC* lipc, const char* property, void* value, void* da
     
     // Kill the app if it's running
     if (app_pid > 0) {
-        char command[48];
-        sprintf(command, "/var/local/mkk/su -c \"kill -9 %i\"", app_pid);
+        char* command;
+        asprintf(&command, "/var/local/mkk/su -c \"kill -9 %i\"", app_pid);
         Log("Killing with: %s", command);
         system(command);
+        free(command);
     }
     
     const LIPCcode result = stub(lipc, property, value, data);
@@ -143,7 +141,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         return stub(lipc, property, value, data);
     }
 
-    struct timespec time[2] = {{
+    struct timespec timestamp[2] = {{
         .tv_nsec = UTIME_NOW,
         .tv_sec = UTIME_NOW
     }, {
@@ -154,7 +152,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
     // Update the item so it is bought to the front
     LipcSetIntProperty(lipc, "com.lab126.scanner", "doFullScan", 1);
     
-    utimensat(0, filePath, time, 0);
+    utimensat(0, filePath, timestamp, 0);
     Log("Invoking app using \"%s\"", command);
     // Run the app on a background thread
     app_pid = fork();
