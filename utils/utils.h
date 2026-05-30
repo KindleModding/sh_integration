@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+char* vasprintf_hd(const char * format, va_list args);
 char* asprintf_hd(const char * format, ...) __attribute__((format(printf, 1, 2)));
 
 int hexDecode(char c);

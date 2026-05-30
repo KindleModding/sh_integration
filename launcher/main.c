@@ -19,7 +19,7 @@ void Log(const char* format, ...)
     va_start (args, format);
     va_list args2;
     va_copy (args2, args);
-    char* buffer = asprintf_hd(format, args2);
+    char* buffer = vasprintf_hd(format, args2);
     printf("%s\n", buffer);
     syslog(LOG_INFO, "%s", buffer);
     free(buffer);
