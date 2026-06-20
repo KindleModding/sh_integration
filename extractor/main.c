@@ -187,8 +187,8 @@ void index_file(char *path, char* filename, bool new) {
                 fileTypeEndPointer = b64Pointer;
             }
 
-            char* fileType = malloc(fileTypeEndPointer - fileTypePointer + 1);
-            strncpy(fileType, fileTypePointer, fileTypeEndPointer - fileTypePointer);
+            char* fileType = malloc((size_t) (fileTypeEndPointer - fileTypePointer + 1));
+            strncpy(fileType, fileTypePointer, (size_t) (fileTypeEndPointer - fileTypePointer));
             fileType[fileTypeEndPointer - fileTypePointer] = '\0';
 
             char* icon_sdr_path = asprintf_hd( "%s/icon.%s", sdr_path, fileType);
@@ -204,15 +204,15 @@ void index_file(char *path, char* filename, bool new) {
                 if (header.icon[i] >= 'A' && header.icon[i] <= 'Z') {
                     value = header.icon[i] - 'A';
                 } else if (header.icon[i] >= 'a' && header.icon[i] <= 'z') {
-                    value = (header.icon[i] - 'a') + 26;
+                    value = (char) (header.icon[i] - 'a') + 26;
                 } else if (header.icon[i] >= '0' && header.icon[i] <= '9') {
-                    value = (header.icon[i] - '0') + 52;
+                    value = (char) (header.icon[i] - '0') + 52;
                 } else if (header.icon[i] == '+') {
                     value = 62;
                 } else if (header.icon[i] == '/') {
                     value = 63;
                 } else if (header.icon[i] != '=') {
-                    Log("Invalid B64 at position %i", i); // Warn
+                    Log("Invalid B64 at position %zu", i); // Warn
                 }
 
                 // Add data to the currentByte
@@ -231,7 +231,7 @@ void index_file(char *path, char* filename, bool new) {
 
                     // Set new currentByte to leftover bits
                     currentByte = 0;
-                    currentByte |= value << (2 + consumedBits);
+                    currentByte |= (char) value << (2 + consumedBits);
                     processedBits = 6 - consumedBits;
                 }
             }
@@ -348,7 +348,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
             const int pid = fork();
             if (pid == 0) {
                 Log("Hello from fork!");
-                char* command = buildCommand("source \"%s\"; on_remove;", escapedPath);
+                char* command = asprintf_hd("source \"%s\"; on_remove;", escapedPath);
                 Log("Executing command: %s", command);
                 free(escapedPath);
                 execl("/var/local/mkk/su", command, NULL);
@@ -367,7 +367,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
     if (access(sdrPath, R_OK|W_OK) == F_OK)
     {
         Log("SDR exists - deleting");
-        recursiveDelete(sdrPath);
+        rmdir_r(sdrPath);
     }
     
     free(sdrPath);

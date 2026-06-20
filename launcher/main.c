@@ -34,7 +34,7 @@ bool shouldExit = false;
 LIPCcode stub(LIPC *lipc, const char *property, void *value, void*) {
     Log("Stub called for \"%s\" with value \"%s\"", property,
            (char *)value);
-    char* mutValue = strdup(value);
+    char* mutValue = strdup((char*) value);
     char *id = strtok((char *)mutValue, ":");
     char *response = asprintf_hd("%s:0:", id);
     Log("Replying with %s", response);
@@ -69,7 +69,7 @@ LIPCcode unload_callback(LIPC* lipc, const char* property, void* value, void* da
     return result;
 }
 
-char* getScriptCommand(char* scriptPath)
+char* getScriptCommand(const char* scriptPath)
 {
     Log("Loading script file");
     FILE* file = fopen(scriptPath, "r");
@@ -94,18 +94,18 @@ char* getScriptCommand(char* scriptPath)
     escapedPath[escapedPathLength] = '\0';
 
     Log("Building command");
-    char* command = buildCommand("sh -l \"%s\"", escapedPath);
+    char* command = asprintf_hd("sh -l \"%s\"", escapedPath);
 
     if (header.useHooks) { // useHooks script - source it and use `on_run`
         Log("Script uses hooks!");
         free(command);
-        command = buildCommand("sh -l -c \"source \\\"%s\\\"; on_run;\"", escapedPath);
+        command = asprintf_hd("sh -l -c \"source \\\"%s\\\"; on_run;\"", escapedPath);
     }
     if (header.useFBInk) {
         Log("Script uses FBInk!");
         char* old_command = strdup(command);
         free(command);
-        command = buildCommand("/mnt/us/libkh/bin/fbink -k; %s 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r", old_command);
+        command = asprintf_hd("/mnt/us/libkh/bin/fbink -k; %s 2>&1 | /mnt/us/libkh/bin/fbink -y 5 -r", old_command);
         free(old_command);
     }
 
@@ -117,7 +117,7 @@ char* getScriptCommand(char* scriptPath)
 
 LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) {
     Log("go_callback");
-    char* rawFilePath = strchr((const char*)value, ':') + 6 + strlen(SERVICE_NAME) + 1;
+    char* rawFilePath = strchr((char*)value, ':') + 6 + strlen(SERVICE_NAME) + 1;
     char* query = strchr(rawFilePath, '?');
     if (query != NULL) {
         query[0] = 0;

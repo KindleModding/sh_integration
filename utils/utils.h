@@ -12,9 +12,7 @@ int hexDecode(char c);
 char* urlDecode(char* raw);
 void strip(char** string);
 
-void recursiveDelete(char* path);
-
-char* buildCommand(const char* command, const char* sub);
+void rmdir_r(char* path);
 
 struct ScriptHeader
 {

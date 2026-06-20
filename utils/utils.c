@@ -4,6 +4,10 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#define __USE_XOPEN_EXTENDED   /* See feature_test_macros(7) */
+#include <ftw.h>
 
 /**
  * @brief vasprintf implementation
@@ -16,8 +20,8 @@ char* vasprintf_hd(const char * format, va_list args)
 {
     va_list args2;
     va_copy (args2, args);
-    int size = vsnprintf(NULL, 0, format, args) + 1;
-    char* str = malloc(size);
+    size_t size = vsnprintf(NULL, 0, format, args) + 1;
+    char* str = (char*) malloc(size);
     vsnprintf(str, size, format, args2);
     va_end(args2);
     return str;
@@ -38,7 +42,7 @@ char* asprintf_hd(const char * format, ...)
     va_end(args);
 }
 
-int hexDecode(char c)
+int hexDecode(const char c)
 {
     if (c >= '0' && c <= '9')
     {
@@ -84,32 +88,32 @@ void strip(char** string)
     *string = finalString;
 }
 
-char* buildCommand(const char* command, const char* sub)
+int internal_delete(const char* fpath, const struct stat*, int typeflag, struct FTW*)
 {
-    char* builtCommand = asprintf_hd(command, sub);
-    return builtCommand;
+    switch (typeflag)
+    {
+        case FTW_F:
+            remove(fpath);
+            break;
+        case FTW_D:
+        case FTW_DP:
+            rmdir(fpath);
+            break;
+        default:
+            break;
+    }
+    return 0;
 }
 
-void recursiveDelete(char* path)
+/**
+ * @brief Deletes a folder recursively, equivalent to "rm -rf"
+ * 
+ * @param path 
+ */
+void rmdir_r(char* path)
 {
-    DIR* dir = opendir(path);
-    struct dirent* item;
-    while ((item = readdir(dir)) != NULL)
-    {
-        if (strcmp(item->d_name, ".") == 0 || strcmp(item->d_name, "..") == 0)
-        {
-            continue;
-        }
-        char* itemPath = asprintf_hd("%s/%s", path, item->d_name);
-        if (item->d_type == DT_DIR)
-        {
-            recursiveDelete(itemPath);
-        }
-        remove(itemPath);
-        free(itemPath);
-    }
-    remove(path);
-    closedir(dir);
+    nftw(path, &internal_delete, 256, FTW_DEPTH);
+    rmdir(path);
 }
 
 void freeScriptHeader(struct ScriptHeader* header)

@@ -28,7 +28,7 @@ int main()
     assert(testURLDecode("Testing", "Testing"));
 
 
-    char* command = buildCommand("test %s testing", "hello");
+    char* command = asprintf_hd("test %s testing", "hello");
     assert(strcmp(command, "test hello testing") == 0);
 
     FILE* file = fopen("./tests/test.sh", "r+");
