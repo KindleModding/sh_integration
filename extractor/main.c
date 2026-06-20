@@ -377,7 +377,7 @@ void remove_file(const char* path, const char* filename, char* uuid) {
 }
 
 int extractor(const struct scanner_event* event) {
-    Log("Extractor called with event type %i\n", event->event_type);
+    Log("sh_integration extractor called with event type %i\n", event->event_type);
     Log("\n.event_type=%i\n.filename=%s\n.glob=%s\n.lipchandle=%u\n.path=%s\n.uuid=%s\n\n", event->event_type, event->filename, event->glob, event->lipchandle, event->path, event->uuid);
     switch (event->event_type) {
         case SCANNER_ADD:
@@ -406,7 +406,7 @@ int extractor(const struct scanner_event* event) {
 }
 
 __attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
-    Log("Extractor initialised.\n");
+    Log("sh_integration extractor v4.0.0 initialised\n");
     *handler = extractor;
     *unk1 = 0;
     return 0;
