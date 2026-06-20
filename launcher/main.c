@@ -166,7 +166,7 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
 #ifndef LAUNCHER_TESTING
 int main(void) {
     openlog(SERVICE_NAME, LOG_CONS|LOG_NDELAY|LOG_PID, LOG_USER);
-    Log("SH_INTEGRATION LAUNCHER START!");
+    Log("sh_integration launcher v4.0.0");
     LIPCcode code;
     LIPC* lipc = LipcOpenEx(SERVICE_NAME, &code);
     if (code != LIPC_OK)
