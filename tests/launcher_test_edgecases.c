@@ -44,12 +44,12 @@ int main()
     free(command);
 
     printf("\n\n");
-    char* test = strdup("4:app://com.notmarek.shell_integration.launcher./tests/KindleCraft.sh");
+    char* test = strdup("4:app://tech.hackerdude.shell_integration.launcher./tests/KindleCraft.sh");
     go_callback(NULL, "test1", test, NULL);
     printf("\n\n");
     free(test);
 
-    test = strdup("4:app://com.notmarek.shell_integration.launcher.%2Ftests%2FCheck%20OTA%20status%20v1.1.sh");
+    test = strdup("4:app://tech.hackerdude.shell_integration.launcher.%2Ftests%2FCheck%20OTA%20status%20v1.1.sh");
     go_callback(NULL, "test2", test, NULL);
     free(test);
     return 0;

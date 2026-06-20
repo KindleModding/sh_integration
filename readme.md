@@ -1,5 +1,5 @@
 # SH_Integration
-SH_Integration v3.2.0
+SH_Integration v4.0.0
 
 <a href='https://ko-fi.com/H2H0R8K8K' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
@@ -41,7 +41,7 @@ For more information see: [The Wiki](https://kindlemodding.org/kindle-dev/script
   {
     "def": "handlerId",
     "assoc": {
-      "handlerId": "com.notmarek.extractor",
+      "handlerId": "tech.hackerdude.extractor",
       "props": {
         "lib": "/mnt/us/KOI/libKOIExtractor.so",
         "entry": "load_extractors"
@@ -52,7 +52,7 @@ For more information see: [The Wiki](https://kindlemodding.org/kindle-dev/script
     "def": "association",
     "assoc": {
       "interface": "extractor",
-      "handlerId": "com.notmarek.extractor",
+      "handlerId": "tech.hackerdude.extractor",
       "contentIds": ["GL:*.epub"],
       "default": "true"
     }

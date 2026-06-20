@@ -6,7 +6,7 @@
 
 int main()
 {
-    char* test = "4:app://com.notmarek.shell_integration.launcher./tests/test.sh";
+    char* test = "4:app://tech.hackerdude.shell_integration.launcher./tests/test.sh";
     go_callback(NULL, "test", test, NULL);
     return 0;
 }

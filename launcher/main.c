@@ -11,7 +11,7 @@
 #include "utils.h"
 #include <syslog.h>
 
-#define SERVICE_NAME "com.notmarek.shell_integration.launcher"
+#define SERVICE_NAME "tech.hackerdude.shell_integration.launcher"
 
 void Log(const char* format, ...)
 {
@@ -192,6 +192,7 @@ int main(void) {
 
             Log("Exiting");
             LipcSetStringProperty(lipc, "com.lab126.appmgrd", "stop", SERVICE_NAME);
+            system("/usr/bin/xrefresh -d :0.0"); // Needed to bring back the top bar sometimes
         }
     }
 
