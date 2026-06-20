@@ -16,7 +16,8 @@ jobs:
     - name: build
       continue-on-error: true
       run: |
-          sudo apt-get install meson
+          sudo apt update
+          sudo apt install meson
           meson setup builddir
           meson test -C builddir
     - uses: actions/upload-artifact@v4
@@ -38,7 +39,8 @@ jobs:
         path: kindle-sdk
     - name: "Setup kindle-sdk"
       run: |
-          sudo apt-get install -y zlib1g-dev libarchive-dev nettle-dev curl
+          sudo apt update
+          sudo apt install -y zlib1g-dev libarchive-dev nettle-dev curl
           bash ./kindle-sdk/gen-sdk.sh kindlepw2
 
     - uses: actions/checkout@v4
@@ -46,7 +48,7 @@ jobs:
         submodules: recursive
     - name: build
       run: |
-          sudo apt-get install meson
+          sudo apt install meson
           meson setup --cross-file ~/x-tools/arm-kindlepw2-linux-gnueabi/meson-crosscompile.txt builddir_kindlepw2
           meson compile -C builddir_kindlepw2
     - uses: actions/upload-artifact@v4
@@ -68,7 +70,8 @@ jobs:
         path: kindle-sdk
     - name: "Setup kindle-sdk"
       run: |
-          sudo apt-get install -y zlib1g-dev libarchive-dev nettle-dev curl
+          sudo apt update
+          sudo apt install -y zlib1g-dev libarchive-dev nettle-dev curl
           bash ./kindle-sdk/gen-sdk.sh kindlehf
 
     - uses: actions/checkout@v4
@@ -76,7 +79,7 @@ jobs:
         submodules: recursive
     - name: build
       run: |
-          sudo apt-get install meson
+          sudo apt install meson
           meson setup --cross-file ~/x-tools/arm-kindlehf-linux-gnueabihf/meson-crosscompile.txt builddir_kindlehf
           meson compile -C builddir_kindlehf
     - uses: actions/upload-artifact@v4
