@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -14,20 +13,13 @@
 #include "cjson/cJSON.h"
 #include "utils.h"
 
-#define SERVICE_NAME "tech.hackerdude.shell_integration.extractor"
-
 void Log(const char* format, ...)
 {
     va_list args;
     va_start (args, format);
-    va_list args2;
-    va_copy (args2, args);
-    char* buffer = vasprintf_hd(format, args2);
-    printf("%s\n", buffer);
-    syslog(LOG_INFO, "%s", buffer);
-    free(buffer);
+    vprintf (format, args);
+    printf("\n");
     va_end (args);
-    va_end (args2);
 }
 
 cJSON* generateChangeRequest(cJSON* json, char* filePath, char* uuid, char* name_string, char* author_string, char* icon_string, bool new) {
@@ -166,18 +158,15 @@ void index_file(char *path, char* filename, bool new) {
     readScriptHeader(file, &header);
     fclose(file);
 
-    Log("Checking for icon");
     bool validIcon = false;
     if (header.icon != NULL)
     {
         if (strncmp(header.icon, "data:image", strlen("data:image")) == 0)
         {
-            Log("Has a base64 icon!");
             validIcon = true;
         }
         if (access(header.icon, R_OK|W_OK) == F_OK)
         {
-            Log("Has an image icon!");
             validIcon = true;
         }
     }
@@ -301,7 +290,6 @@ void index_file(char *path, char* filename, bool new) {
 
 
     // Create JSON objects
-    Log("Creating change request...");
     cJSON* json = cJSON_CreateObject();
     if (!json) {
         fprintf(stderr, "Failed to create a JSON object");
@@ -311,7 +299,6 @@ void index_file(char *path, char* filename, bool new) {
     generateChangeRequest(json, full_path, uuid, header.name, header.author, header.icon, new);
     
 
-    Log("Posting change request");
     const int result = scanner_post_change(json);
     char* stringJSON = cJSON_Print(json);
     Log("Indexing json:\n%s\n\n", stringJSON);
@@ -394,11 +381,9 @@ int extractor(const struct scanner_event* event) {
     Log("\n.event_type=%i\n.filename=%s\n.glob=%s\n.lipchandle=%u\n.path=%s\n.uuid=%s\n\n", event->event_type, event->filename, event->glob, event->lipchandle, event->path, event->uuid);
     switch (event->event_type) {
         case SCANNER_ADD:
-            Log("Adding file: %s/%s", event->path, event->filename);
             index_file(event->path, event->filename, true);
             break;
         case SCANNER_DELETE:
-            Log("Deleting file: %s/%s", event->path, event->filename);
             remove_file(event->path, event->filename, event->uuid);
             break;
         case SCANNER_UPDATE:

@@ -129,7 +129,6 @@ void freeScriptHeader(struct ScriptHeader* header)
 
 void readScriptHeader(FILE* file, struct ScriptHeader* header)
 {
-    Log("Reading script header...");
     header->author=NULL;
     header->icon=NULL;
     header->name=NULL;
