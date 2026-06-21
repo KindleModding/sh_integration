@@ -421,7 +421,6 @@ int extractor(const struct scanner_event* event) {
 }
 
 __attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
-    openlog(SERVICE_NAME, LOG_CONS|LOG_NDELAY|LOG_PID, LOG_USER);
     Log("sh_integration extractor v4.0.0 initialised\n");
     *handler = extractor;
     *unk1 = 0;
