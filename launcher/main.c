@@ -10,6 +10,7 @@
 #include <time.h>
 #include "utils.h"
 #include <syslog.h>
+#include <sys/time.h>
 
 #define SERVICE_NAME "tech.hackerdude.shell_integration.launcher"
 
@@ -137,18 +138,11 @@ LIPCcode go_callback(LIPC* lipc, const char* property, void* value, void* data) 
         return stub(lipc, property, value, data);
     }
 
-    struct timespec timestamp[2] = {{
-        .tv_nsec = UTIME_NOW,
-        .tv_sec = UTIME_NOW
-    }, {
-        .tv_nsec = UTIME_NOW,
-        .tv_sec = UTIME_NOW
-    }};
-
+    utimes(filePath, NULL);
+    
     // Update the item so it is bought to the front
     LipcSetIntProperty(lipc, "com.lab126.scanner", "doFullScan", 1);
-    
-    utimensat(0, filePath, timestamp, 0);
+
     Log("Invoking app using \"%s\"", command);
     // Run the app on a background thread
     app_pid = fork();

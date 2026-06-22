@@ -26,6 +26,70 @@ jobs:
         name: sh_integration-tests_logs
         path: builddir/meson-logs
 
+  build-kindle:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download toolchain
+      run: wget -q https://github.com/KindleModding/koxtoolchain/releases/latest/download/kindle.tar.gz -O - | tar -xzf - -C ~
+    
+    - uses: actions/checkout@v4
+      with:
+        repository: KindleModding/kindle-sdk
+        submodules: recursive
+        path: kindle-sdk
+    - name: "Setup kindle-sdk"
+      run: |
+          sudo apt update
+          sudo apt install -y zlib1g-dev libarchive-dev nettle-dev curl
+          bash ./kindle-sdk/gen-sdk.sh kindle
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: build
+      run: |
+          sudo apt install python3 python3-pip python3-setuptools python3-wheel ninja-build
+          pip3 install meson
+          meson setup --cross-file ~/x-tools/arm-kindle-linux-gnueabihf/meson-crosscompile.txt builddir_kindlehf
+          meson compile -C builddir_kindlehf
+    - uses: actions/upload-artifact@v4
+      with:
+        name: sh_integration-kindle
+        path: builddir_kindle
+
+  build-kindle5:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download toolchain
+      run: wget -q https://github.com/KindleModding/koxtoolchain/releases/latest/download/kindle5.tar.gz -O - | tar -xzf - -C ~
+    
+    - uses: actions/checkout@v4
+      with:
+        repository: KindleModding/kindle-sdk
+        submodules: recursive
+        path: kindle-sdk
+    - name: "Setup kindle-sdk"
+      run: |
+          sudo apt update
+          sudo apt install -y zlib1g-dev libarchive-dev nettle-dev curl
+          bash ./kindle-sdk/gen-sdk.sh kindle5
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: build
+      run: |
+          sudo apt install python3 python3-pip python3-setuptools python3-wheel ninja-build
+          pip3 install meson
+          meson setup --cross-file ~/x-tools/arm-kindle5-linux-gnueabihf/meson-crosscompile.txt builddir_kindlehf
+          meson compile -C builddir_kindlehf
+    - uses: actions/upload-artifact@v4
+      with:
+        name: sh_integration-kindle5
+        path: builddir_kindle5
+
   build-kindlepw2:
     runs-on: ubuntu-latest
 
