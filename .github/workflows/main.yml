@@ -51,7 +51,7 @@ jobs:
       run: |
           sudo apt install python3 python3-pip python3-setuptools python3-wheel ninja-build
           pip3 install meson
-          meson setup --cross-file ~/x-tools/arm-kindle-linux-gnueabihf/meson-crosscompile.txt builddir_kindlehf
+          meson setup --cross-file ~/x-tools/arm-kindle-linux-gnueabi/meson-crosscompile.txt builddir_kindlehf
           meson compile -C builddir_kindlehf
     - uses: actions/upload-artifact@v4
       with:
@@ -83,7 +83,7 @@ jobs:
       run: |
           sudo apt install python3 python3-pip python3-setuptools python3-wheel ninja-build
           pip3 install meson
-          meson setup --cross-file ~/x-tools/arm-kindle5-linux-gnueabihf/meson-crosscompile.txt builddir_kindlehf
+          meson setup --cross-file ~/x-tools/arm-kindle5-linux-gnueabi/meson-crosscompile.txt builddir_kindlehf
           meson compile -C builddir_kindlehf
     - uses: actions/upload-artifact@v4
       with:
