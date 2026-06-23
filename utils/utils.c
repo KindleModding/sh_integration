@@ -38,8 +38,9 @@ char* asprintf_hd(const char * format, ...)
 {
     va_list args;
     va_start(args, format);
-    return vasprintf_hd(format, args);
+    char* result = vasprintf_hd(format, args);
     va_end(args);
+    return result;
 }
 
 int hexDecode(const char c)
