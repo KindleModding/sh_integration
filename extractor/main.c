@@ -243,6 +243,24 @@ void index_file(char *path, char* filename, bool new) {
             free(fileType);
         }
 
+        // Create JSON objects
+        cJSON* json = cJSON_CreateObject();
+        if (!json) {
+            fprintf(stderr, "Failed to create a JSON object");
+            return;
+        }
+        
+        generateChangeRequest(json, full_path, uuid, header.name, header.author, header.icon, new);
+        
+
+        const int result = scanner_post_change(json);
+        char* stringJSON = cJSON_Print(json);
+        Log("Indexing json:\n%s\n\n", stringJSON);
+        free(stringJSON);
+        Log("ccat error: %d\n", result);
+        cJSON_Delete(json);
+
+        // Run install hook AFTER index to prevent re-running on some failure modes
         if (header.useHooks) {
             Log("Script uses hooks!");
             // If the file is functional, run install hook
@@ -288,28 +306,6 @@ void index_file(char *path, char* filename, bool new) {
         free(sdr_path);
     }
 
-
-    // Create JSON objects
-    cJSON* json = cJSON_CreateObject();
-    if (!json) {
-        fprintf(stderr, "Failed to create a JSON object");
-        return;
-    }
-    
-    generateChangeRequest(json, full_path, uuid, header.name, header.author, header.icon, new);
-    
-
-    const int result = scanner_post_change(json);
-    char* stringJSON = cJSON_Print(json);
-    Log("Indexing json:\n%s\n\n", stringJSON);
-    free(stringJSON);
-    Log("ccat error: %d\n", result);
-    //printf("Json: %s\n", cJSON_Print(json));
-
-    if (json)
-    {
-        cJSON_Delete(json);
-    }
     // Can you believe that cJSON deleting causes issues
     freeScriptHeader(&header);
     free(full_path);
@@ -330,6 +326,9 @@ void remove_file(const char* path, const char* filename, char* uuid) {
         struct ScriptHeader header;
         readScriptHeader(file, &header);
         fclose(file);
+
+        Log("Removing ccat entry.");
+        scanner_delete_ccat_entry(uuid);
 
         // If the file is uses hooks, run removal hook
         if (header.useHooks) {
@@ -363,6 +362,11 @@ void remove_file(const char* path, const char* filename, char* uuid) {
         freeScriptHeader(&header);
         Log("Removing: %s\n", sdrPath);
     }
+    else
+    {
+        Log("Removing ccat entry.");
+        scanner_delete_ccat_entry(uuid);
+    }
 
     if (access(sdrPath, R_OK|W_OK) == F_OK)
     {
@@ -372,8 +376,6 @@ void remove_file(const char* path, const char* filename, char* uuid) {
     
     free(sdrPath);
     free(sdrScriptPath);
-    Log("Removing ccat entry.");
-    scanner_delete_ccat_entry(uuid);
 }
 
 int extractor(const struct scanner_event* event) {
@@ -406,7 +408,7 @@ int extractor(const struct scanner_event* event) {
 }
 
 __attribute__((__visibility__("default"))) int load_extractor(ScannerEventHandler** handler, int *unk1) {
-    Log("sh_integration extractor v4.0.0 initialised\n");
+    Log("sh_integration extractor v4.1.0 initialised\n");
     *handler = extractor;
     *unk1 = 0;
     return 0;
