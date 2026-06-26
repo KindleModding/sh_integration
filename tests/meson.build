@@ -51,41 +51,41 @@ configure_file(
 )
 
 utils_test = executable('utils_test', ['utils_test.c', '../utils/utils.c'], include_directories: ['../utils', '.'])
-test('Test Utils', utils_test, is_parallel : false)
+test('Test Utils', utils_test, is_parallel : true)
 
 extractor_test_change_request = executable('extractor_test_change_request', ['extractor_test_change_request.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
-test('Test Extractor Change Request Generator', extractor_test_change_request, is_parallel : false)
+test('Test Extractor Change Request Generator', extractor_test_change_request, is_parallel : true)
 
 extractor_test_unknown_event = executable('extractor_test_unknown_event', ['extractor_test_unknown_event.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
-test('Test Extractor Unknown Event', extractor_test_unknown_event, is_parallel : false)
+test('Test Extractor Unknown Event', extractor_test_unknown_event, is_parallel : true)
 
 extractor_test_add_file = executable('extractor_test_add_file', ['extractor_test_add_file.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
-test('Test Extractor Add File', extractor_test_add_file, is_parallel : false)
+test('Test Extractor Add File', extractor_test_add_file, is_parallel : true)
 
 
 extractor_test_update_file = executable('extractor_test_update_file', ['extractor_test_update_file.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
-test('Test Extractor Update File', extractor_test_update_file, is_parallel : false)
+test('Test Extractor Update File', extractor_test_update_file, is_parallel : true)
 
 extractor_test_remove_file = executable('extractor_test_remove_file', ['extractor_test_remove_file.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
-test('Test Extractor Remove File', extractor_test_remove_file, is_parallel : false)
+test('Test Extractor Remove File', extractor_test_remove_file, is_parallel : true)
 
 extractor_test_add_noicon_file = executable('extractor_test_add_noicon_file', ['extractor_test_add_noicon_file.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
-test('Test Extractor Add Noicon File', extractor_test_add_noicon_file, is_parallel : false)
+test('Test Extractor Add Noicon File', extractor_test_add_noicon_file, is_parallel : true)
 
 extractor_test_edgecases = executable('extractor_test_edgecases', ['extractor_test_edgecases.c', '../extractor/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ cjson_dep, scanner_stub_dep ])
-test('Test Extractor Edge Cases', extractor_test_edgecases, is_parallel : false)
+test('Test Extractor Edge Cases', extractor_test_edgecases, is_parallel : true)
 
 launcher_test_generate_command = executable('launcher_test_generate_command', ['launcher_test_generate_command.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
-test('Test Launcher Generate Command', launcher_test_generate_command, is_parallel: false)
+test('Test Launcher Generate Command', launcher_test_generate_command, is_parallel: true)
 
 launcher_test_stub = executable('launcher_test_stub', ['launcher_test_stub.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
-test('Test Launcher Stub', launcher_test_stub, is_parallel: false)
+test('Test Launcher Stub', launcher_test_stub, is_parallel: true)
 
 launcher_test_go_callback = executable('launcher_test_go_callback', ['launcher_test_go_callback.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
-test('Test Launcher Go Callback', launcher_test_go_callback, is_parallel: false)
+test('Test Launcher Go Callback', launcher_test_go_callback, is_parallel: true)
 
 launcher_test_unload_callback = executable('launcher_test_unload_callback', ['launcher_test_unload_callback.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
-test('Test Launcher Unload Callback', launcher_test_unload_callback, is_parallel: false)
+test('Test Launcher Unload Callback', launcher_test_unload_callback, is_parallel: true)
 
 launcher_test_edgecases = executable('launcher_test_edgecases', ['launcher_test_edgecases.c', '../launcher/main.c', '../utils/utils.c'], include_directories: ['../utils', '.'], dependencies: [ lipc_dep, scanner_stub_dep ], c_args: ['-DLAUNCHER_TESTING'])
-test('Test Launcher Edge Cases', launcher_test_edgecases, is_parallel: false)
+test('Test Launcher Edge Cases', launcher_test_edgecases, is_parallel: true)
