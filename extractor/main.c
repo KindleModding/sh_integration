@@ -243,23 +243,6 @@ void index_file(char *path, char* filename, bool new) {
             free(fileType);
         }
 
-        // Create JSON objects
-        cJSON* json = cJSON_CreateObject();
-        if (!json) {
-            fprintf(stderr, "Failed to create a JSON object");
-            return;
-        }
-        
-        generateChangeRequest(json, full_path, uuid, header.name, header.author, header.icon, new);
-        
-
-        const int result = scanner_post_change(json);
-        char* stringJSON = cJSON_Print(json);
-        Log("Indexing json:\n%s\n\n", stringJSON);
-        free(stringJSON);
-        Log("ccat error: %d\n", result);
-        cJSON_Delete(json);
-
         // Run install hook AFTER index to prevent re-running on some failure modes
         if (header.useHooks) {
             Log("Script uses hooks!");
@@ -305,6 +288,22 @@ void index_file(char *path, char* filename, bool new) {
 
         free(sdr_path);
     }
+
+    // Create JSON objects
+    cJSON* json = cJSON_CreateObject();
+    if (!json) {
+        fprintf(stderr, "Failed to create a JSON object");
+        return;
+    }
+
+    generateChangeRequest(json, full_path, uuid, header.name, header.author, header.icon, new);
+
+    const int result = scanner_post_change(json);
+    char* stringJSON = cJSON_Print(json);
+    Log("Indexing json:\n%s\n\n", stringJSON);
+    free(stringJSON);
+    Log("ccat error: %d\n", result);
+    cJSON_Delete(json);
 
     // Can you believe that cJSON deleting causes issues
     freeScriptHeader(&header);

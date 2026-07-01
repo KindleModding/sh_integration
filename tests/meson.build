@@ -50,6 +50,12 @@ configure_file(
   copy: true
 )
 
+configure_file(
+  input: 'jb.sh runner.sh',
+  output: 'jb.sh runner.sh',
+  copy: true
+)
+
 utils_test = executable('utils_test', ['utils_test.c', '../utils/utils.c'], include_directories: ['../utils', '.'])
 test('Test Utils', utils_test, is_parallel : true)
 

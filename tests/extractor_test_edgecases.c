@@ -75,5 +75,12 @@ int main()
     fclose(file);
     freeScriptHeader(&header);
 
+    event.filename = "./tests/jb.sh runner.sh";
+    assert(handler(&event) == 0);
+
+    file = fopen("./tests/jb.sh runner.sh", "r");
+    readScriptHeader(file, &header);
+    fclose(file);
+
     return 0;
 }
